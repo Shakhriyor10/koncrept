@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#13090b">
+  <meta name="description" content="Эльдар Далгатов — большой концерт в Silk Road Samarkand. 25 октября 2026 года. Билеты скоро в продаже.">
+  <title>Эльдар Далгатов — 25 октября 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f7f1ed;
+      --muted: #c0adab;
+      --red: #df2332;
+      --line: rgba(255, 255, 255, .16);
+      font-family: "DM Sans", "Manrope", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      color: var(--ink);
+      background: #13090b;
+    }
+    .page {
+      position: relative;
+      min-height: 100vh;
+      overflow: hidden;
+      isolation: isolate;
+      background:
+        radial-gradient(ellipse at 75% 43%, rgba(139, 10, 27, .32), transparent 43%),
+        linear-gradient(112deg, #13090b 3%, #1c0b0e 52%, #320c12 100%);
+    }
+    .page::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      content: "";
+      opacity: .19;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.2'/%3E%3C/svg%3E");
+    }
+    .shell { width: min(1240px, calc(100% - 88px)); margin: 0 auto; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 94px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display: inline-flex; align-items: center; text-decoration: none; }
+    .brand-logo { display: block; width: 86px; height: 86px; object-fit: contain; }
+    .top-note { color: var(--muted); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
+    main {
+      display: grid;
+      grid-template-columns: .93fr 1.07fr;
+      align-items: center;
+      min-height: min(740px, calc(100vh - 150px));
+      padding: 44px 0 54px;
+    }
+    .copy { position: relative; z-index: 2; padding: 10px 0 20px; }
+    h1 {
+      max-width: 630px;
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(58px, 7.2vw, 100px);
+      font-weight: 400;
+      letter-spacing: -.065em;
+      line-height: .91;
+    }
+    h1 span { display: block; color: #e9d9d5; }
+    .subtitle { margin: 27px 0 35px; color: #d6c4c1; font-size: 14px; letter-spacing: .035em; }
+    .details { display: flex; flex-wrap: wrap; gap: 25px 35px; margin: 0 0 40px; }
+    .detail { display: grid; gap: 8px; }
+    .detail-label { color: #ad9695; font-size: 10px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
+    .detail-value { color: var(--ink); font-size: 14px; font-weight: 600; }
+    .ticket-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      min-height: 64px;
+      padding: 19px 25px;
+      border: 1px solid rgba(255, 255, 255, .38);
+      border-radius: 3px;
+      background: linear-gradient(115deg, #f22b3d, #c61125 72%, #a70d1d);
+      box-shadow: 0 12px 40px rgba(218, 22, 42, .32), inset 0 1px rgba(255,255,255,.2);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .ticket-status::before { width: 9px; height: 9px; flex: 0 0 9px; border-radius: 50%; background: #fff; box-shadow: 0 0 13px rgba(255,255,255,.8); content: ""; }
+    .photo-wrap { position: relative; align-self: stretch; min-height: 520px; }
+    .photo-wrap::before {
+      position: absolute;
+      z-index: -1;
+      top: 14%; right: -14%;
+      width: 90%; height: 72%;
+      border-radius: 50%;
+      background: rgba(194, 18, 38, .22);
+      filter: blur(85px);
+      content: "";
+    }
+    .photo {
+      position: absolute;
+      inset: 0 -10vw 0 -7%;
+      background-image:
+        linear-gradient(90deg, #1c0b0e 0%, rgba(28, 11, 14, .73) 8%, rgba(28, 11, 14, .06) 37%, rgba(19, 9, 11, .03) 70%, #19090c 100%),
+        linear-gradient(0deg, #19090c 0%, transparent 27%, transparent 82%, #19090c 100%),
+        url("assets/eldar-dalgatov.png");
+      background-position: center, center, 57% center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 16%, #000 87%, transparent 100%);
+      mask-image: linear-gradient(90deg, transparent 0%, #000 16%, #000 87%, transparent 100%);
+    }
+    .photo-caption { position: absolute; right: 0; bottom: 16px; color: rgba(255,255,255,.45); font-size: 9px; letter-spacing: .2em; text-transform: uppercase; writing-mode: vertical-rl; }
+    footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 21px 0 25px;
+      border-top: 1px solid var(--line);
+      color: #947f7e;
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    @media (min-width: 1500px) { .photo { right: calc((1240px - 100vw) / 2); } }
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 42px, 560px); }
+      header { height: 72px; }
+      .top-note { font-size: 9px; }
+      main { display: flex; flex-direction: column; align-items: stretch; min-height: initial; padding: 54px 0 35px; }
+      .copy { padding: 0; }
+      h1 { font-size: clamp(58px, 14vw, 88px); }
+      .subtitle { margin: 20px 0 26px; font-size: 12px; }
+      .details { gap: 21px 27px; margin-bottom: 28px; }
+      .detail-value { font-size: 12px; }
+      .ticket-status { min-height: 58px; gap: 11px; padding: 17px 18px; font-size: 11px; letter-spacing: .09em; }
+      .photo-wrap { order: -1; height: clamp(220px, 65vw, 300px); min-height: 0; margin: -15px -21px 31px; }
+      .photo { inset: 0; background-position: center, center, 58% 41%; -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%); }
+      .photo-caption { right: 21px; bottom: 7px; }
+      footer { font-size: 8px; letter-spacing: .08em; }
+    }
+    @media (max-width: 400px) {
+      .shell { width: calc(100% - 34px); }
+      .brand-logo { width: 66px; height: 66px; }
+      .top-note { max-width: 120px; text-align: right; line-height: 1.5; }
+      .photo-wrap { margin-right: -17px; margin-left: -17px; }
+      footer { flex-direction: column; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="shell">
+      <header>
+        <a class="brand" href="#top" aria-label="Major Motors Auto Salon"><img class="brand-logo" src="assets/major-motors-logo-transparent.png" alt="Major Motors Auto Salon"></a>
+        <div class="top-note">Большой сольный концерт</div>
+      </header>
+      <main id="top">
+        <section class="copy" aria-labelledby="artist-name">
+          <h1 id="artist-name">Эльдар <span>Далгатов</span></h1>
+          <p class="subtitle">Вечер любимых песен и живых эмоций</p>
+          <div class="details">
+            <div class="detail"><span class="detail-label">Дата</span><span class="detail-value">25 октября 2026</span></div>
+            <div class="detail"><span class="detail-label">Место</span><span class="detail-value">Silk Road Samarkand</span></div>
+          </div>
+          <div class="ticket-status">Билеты скоро в продаже</div>
+        </section>
+        <div class="photo-wrap" role="img" aria-label="Эльдар Далгатов на красном фоне">
+          <div class="photo"></div>
+          <span class="photo-caption">Eldar Dalgatov · Live 2026</span>
+        </div>
+      </main>
+      <footer><span>Silk Road Samarkand</span><span>25 · 10 · 2026</span></footer>
+    </div>
+  </div>
+</body>
+</html>
