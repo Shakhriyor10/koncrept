@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load concerts_tags %}
+{% block content %}
+<main class="hero" id="top">
+  <section class="hero-copy">
+    <h1>{{ concert.artist_name|truncatewords:2 }}</h1>
+    <p class="hero-subtitle">{{ concert.tagline|default:'Вечер любимых песен и живых эмоций' }}</p>
+    <div class="event-facts">
+      <div><span>Дата</span><strong>{{ concert.event_date|date:'d.m.Y' }}</strong></div>
+      <div><span>Место</span><strong>{{ concert.venue }}</strong></div>
+    </div>
+    <a class="button button-primary" data-spa-nav href="{% url 'order-create' %}">Выбрать билеты <span aria-hidden="true">↗</span></a>
+  </section>
+  <div class="hero-photo" role="img" aria-label="Эльдар Далгатов на красном фоне">
+    <img src="{% static 'eldar-dalgatov.png' %}" alt="Эльдар Далгатов">
+    <span class="photo-caption">ELDAR DALGATOV · LIVE 2026</span>
+  </div>
+</main>
+<section class="tickets-section" id="tickets">
+  <div class="section-heading"><div><h2>Билеты</h2></div><span>Цены указаны за один билет</span></div>
+  <div class="ticket-grid">
+    {% for ticket in ticket_types %}
+      <article class="ticket-card {% if ticket.code == 'vip' %}ticket-card-featured{% endif %}">
+        <a data-spa-nav href="{% url 'order-create' %}" class="ticket-card-link" aria-label="Купить билет {{ ticket.title }} за {{ ticket.price|money }} сум">
+          <div class="ticket-card-top"><span>{{ ticket.title }}</span></div>
+          <p>{{ ticket.description|default:'Вход на концерт Эльдара Далгатова' }}</p>
+          <strong class="ticket-price">{{ ticket.price|money }} <small>сум</small></strong>
+          <span class="text-link">Купить билет <span aria-hidden="true">↗</span></span>
+        </a>
+        <button class="ticket-info-button" type="button" data-ticket-info data-title="{{ ticket.title }}" data-description="{{ ticket.details|default:ticket.description }}" aria-label="Подробнее о билете {{ ticket.title }}" title="Подробнее">!</button>
+      </article>
+    {% empty %}
+      <p class="muted">Информация о билетах скоро появится.</p>
+    {% endfor %}
+  </div>
+</section>
+<dialog class="ticket-info-modal" data-ticket-modal aria-labelledby="ticket-info-title">
+  <button class="ticket-info-close" type="button" data-ticket-modal-close aria-label="Закрыть окно">×</button>
+  <h2 id="ticket-info-title" class="page-title" data-ticket-modal-title></h2>
+  <p class="ticket-info-description" data-ticket-modal-description></p>
+  <a class="button button-primary" data-spa-nav href="{% url 'order-create' %}">Выбрать билет <span aria-hidden="true">↗</span></a>
+</dialog>
+{% endblock %}

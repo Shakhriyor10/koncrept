@@ -1,0 +1,7 @@
+<form method="post" action="{% url 'login' %}{% if next %}?next={{ next|urlencode }}{% endif %}" data-async-form data-fragment="#auth-form" class="stack-form">
+  {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+  {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors }}</div>{% endif %}
+  {% for field in form %}<label class="field"><span>{{ field.label }}</span>{{ field }}{% for error in field.errors %}<small class="field-error">{{ error }}</small>{% endfor %}</label>{% endfor %}
+  <button class="button button-primary button-wide" type="submit">Войти <span aria-hidden="true">↗</span></button>
+  <p class="form-switch">Нет аккаунта? <a data-spa-nav href="{% url 'register' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Зарегистрироваться</a></p>
+</form>

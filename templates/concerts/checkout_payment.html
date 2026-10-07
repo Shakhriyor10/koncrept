@@ -1,0 +1,47 @@
+{% load concerts_tags static %}
+<section class="checkout-panel">
+  <p class="eyebrow">Шаг 02 · Перевод</p><h1 class="page-title">Оплата заказа</h1>
+  <p class="muted">Заказ <strong>{{ order.reference }}</strong> · {{ order.ticket_count }} билет(а/ов)</p>
+  {% if order.status == 'rejected' %}<div class="notice notice-error"><strong>Чек не подтверждён</strong><span>{{ order.review_note }}</span></div>{% endif %}
+  <div class="order-summary">
+    {% for item in order.items.all %}<div><span>{{ item.ticket_type.title }} × {{ item.quantity }}</span><strong>{{ item.total|money }} сум</strong></div>{% endfor %}
+    <div class="order-summary-total"><span>Итого к переводу</span><strong>{{ order.total_amount|money }} сум</strong></div>
+  </div>
+  <form method="post" action="{% url 'order-payment' reference=order.reference %}" enctype="multipart/form-data" data-async-form data-fragment="#checkout-flow" class="stack-form proof-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors }}</div>{% endif %}
+    {% if cards %}
+      <div data-provider-picker>
+        <div class="payment-provider-options" role="radiogroup" aria-label="Тип карты для перевода">
+          {% for value, label, available in provider_options %}
+            <label class="payment-provider-option{% if not available %} payment-provider-unavailable{% endif %}">
+              <input type="radio" name="payment_provider" value="{{ value }}" data-payment-provider data-provider-label="{{ label }}" {% if form.payment_provider.value == value %}checked{% endif %} {% if not available %}disabled{% endif %} required>
+              <img class="payment-provider-logo payment-provider-logo-{{ value }}" src="{% if value == 'uzcard' %}{% static 'uzcard-logo.png' %}{% else %}{% static 'humo-logo.png' %}{% endif %}" alt="{{ label }}">
+              <span class="payment-provider-caption">{% if available %}Перевод на карту{% else %}Временно недоступно{% endif %}<br><strong>{{ label }}</strong></span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="payment-provider-locked" data-payment-provider-locked hidden><span>Выбрано:</span><strong data-selected-provider-name></strong><button class="button button-outline payment-provider-back" type="button" data-payment-provider-back>← Назад</button></div>
+      {% for error in form.payment_provider.errors %}<small class="field-error">{{ error }}</small>{% endfor %}
+      {% for provider, provider_label, provider_cards in cards_by_provider %}
+        <div class="payment-cards payment-cards-selected" data-provider-cards="{{ provider }}" {% if form.payment_provider.value != provider %}hidden{% endif %}>
+          {% for card in provider_cards %}<label class="payment-card"><input type="radio" name="payment_card" value="{{ card.pk }}" data-payment-card data-provider="{{ provider }}" {% if form.payment_card.value|stringformat:'s' == card.pk|stringformat:'s' %}checked{% endif %}>
+            <span class="payment-card-content"><span class="payment-card-head"><strong>{{ card.get_provider_display }}</strong>{% if card.label %}<small>{{ card.label }}</small>{% endif %}</span>
+              <span class="card-number">{{ card.card_number }} <button class="copy-button" type="button" data-copy="{{ card.card_number }}" aria-label="Скопировать номер карты">Копировать</button></span>
+              <small>{{ card.cardholder }}</small>{% if card.instructions %}<small>{{ card.instructions }}</small>{% endif %}</span>
+          </label>{% endfor %}
+        </div>
+      {% endfor %}
+      {% for error in form.payment_card.errors %}<small class="field-error">{{ error }}</small>{% endfor %}
+    {% else %}<div class="notice notice-warn">Организатор ещё не добавил карты для перевода. Попробуйте позже.</div>{% endif %}
+    <div class="payment-proof-controls" data-proof-controls hidden>
+      <div class="section-label">Чек перевода <span class="muted">· необязательно</span></div>
+      <label class="upload-box" for="proof-file" data-proof-upload-box><span class="upload-icon">↑</span><strong>Выбрать чек, если он есть</strong><small>JPG, PNG, WebP, PDF и другие фото · до 10 МБ</small><span id="proof-file-name" class="file-name">Файл не выбран</span></label>
+      <input class="visually-hidden" id="proof-file" type="file" name="proof" accept="image/*,.pdf,.heic,.heif" disabled>
+      {% for error in form.proof.errors %}<small class="field-error">{{ error }}</small>{% endfor %}
+      <button class="button button-primary button-wide" type="submit" id="proof-confirm" disabled {% if not cards %}aria-disabled="true"{% endif %}>Подтвердить перевод</button>
+      <p class="form-help">Чек можно приложить для быстрой проверки, но это необязательно. После отправки заказа администраторы проверят перевод.</p>
+    </div>
+  </form>
+</section>

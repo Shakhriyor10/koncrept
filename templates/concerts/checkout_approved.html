@@ -1,0 +1,13 @@
+{% load concerts_tags %}
+<section class="checkout-panel">
+  <p class="eyebrow">Оплата подтверждена</p><h1 class="page-title">Ваши билеты</h1>
+  <div class="notice notice-success"><strong>Заказ {{ order.reference }} одобрен</strong><span>Билеты готовы. Сохраните QR-код и покажите его на входе.</span></div>
+  <div class="issued-tickets">
+    {% for ticket in tickets %}<article class="issued-ticket">
+      <div class="issued-ticket-main"><span class="ticket-kicker">SILK ROAD SAMARKAND · 2026</span><h2>Эльдар Далгатов</h2><p>{{ ticket.order_item.ticket_type.title }} · {{ order.concert.event_date|date:'d.m.Y' }}</p><span class="ticket-code">{{ order.reference }} · №{{ ticket.pk|stringformat:'02d' }}</span><a data-spa-nav href="{% url 'ticket-detail' token=ticket.token %}" class="text-link">Открыть билет ↗</a></div>
+      <a class="qr-link" data-spa-nav href="{% url 'ticket-detail' token=ticket.token %}" aria-label="Открыть билет"><img src="{% url 'ticket-qr' token=ticket.token %}" alt="QR-код билета"></a>
+    </article>{% empty %}<p>Список билетов не загрузился. Вы можете скачать их в PDF ниже.</p>{% endfor %}
+  </div>
+  {% if order.ticket_count %}<a class="button button-primary pdf-download-button" href="{% url 'order-tickets-pdf' reference=order.reference %}" download>Скачать все билеты · PDF <span aria-hidden="true">↓</span></a>{% endif %}
+  <a class="button button-outline" href="{% url 'dashboard' %}">Все мои заказы</a>
+</section>

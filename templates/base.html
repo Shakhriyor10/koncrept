@@ -1,0 +1,59 @@
+{% load static %}
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#13090b">
+  <meta name="description" content="Билеты на концерт Эльдара Далгатова в Silk Road Samarkand">
+  <title>{% block title %}Эльдар Далгатов · Samarkand Live{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/site.css' %}">
+</head>
+<body>
+  <div class="site-bg"></div>
+  <div class="site-shell">
+    <header class="site-header">
+      <a class="brand" data-spa-nav href="{% url 'home' %}" aria-label="На главную">
+        <img src="{% static 'major-motors-logo-transparent.png' %}" alt="Major Motors Auto Salon">
+      </a>
+      <div class="header-right">
+        <span class="header-caption">Большой сольный концерт</span>
+        {% if request.user.is_authenticated %}
+          {% if request.user.is_staff %}<a class="nav-link" data-spa-nav href="{% url 'staff-orders' %}">Панель админа{% if staff_pending_count %}<span class="nav-badge">{{ staff_pending_count }}</span>{% endif %}</a><a class="nav-link" href="{% url 'staff-ticket-scanner' %}">Сканер билетов</a>{% endif %}
+          <a class="nav-link" data-spa-nav href="{% url 'dashboard' %}">Мои заказы</a>
+          <form method="post" action="{% url 'logout' %}" class="logout-form" data-async-form>
+            {% csrf_token %}<button class="nav-link nav-button" type="submit">Выйти</button>
+          </form>
+        {% else %}
+          <a class="nav-link" data-spa-nav href="{% url 'login' %}">Войти</a>
+        {% endif %}
+      </div>
+    </header>
+    {% if messages %}
+      <div class="messages" aria-live="polite">
+        {% for message in messages %}<div class="message {{ message.tags }}">{{ message }}</div>{% endfor %}
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+    <footer class="site-footer">
+      <span>Silk Road Samarkand</span>
+      <span>Эльдар Далгатов · 25.10.2026</span>
+      <div class="footer-contact" aria-label="Контакты">
+        <a href="tel:+998938188818" aria-label="Позвонить по номеру +998 93 818 88 18">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.56 3.58.56.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.61 21 3 13.39 3 4c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.19 2.46.56 3.58a1 1 0 0 1-.25 1.01l-2.19 2.2Z"/></svg>
+          <span>+998 93 818 88 18</span>
+        </a>
+        <a href="https://t.me/shaxriyor_10/" target="_blank" rel="noopener noreferrer" aria-label="Telegram: shaxriyor_10">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.94 4.66 18.8 19.48c-.24 1.05-.86 1.31-1.74.82l-4.8-3.54-2.32 2.23c-.26.26-.48.48-.98.48l.35-4.88 8.88-8.02c.39-.35-.08-.54-.6-.2L6.61 13.3l-4.73-1.48c-1.03-.32-1.05-1.03.22-1.53L20.6 2.94c.85-.31 1.6.2 1.34 1.72Z"/></svg>
+          <span>Telegram</span>
+        </a>
+      </div>
+    </footer>
+  </div>
+  <script src="{% static 'js/app.js' %}" defer></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

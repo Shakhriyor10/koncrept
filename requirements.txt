@@ -1,0 +1,8 @@
+Django==5.2.17
+dj-database-url>=2.3,<3
+python-dotenv>=1,<2
+gunicorn>=23,<24
+Pillow>=11,<13
+qrcode[pil]>=8,<9
+reportlab>=4.2,<5
+psycopg[binary]>=3.2,<4

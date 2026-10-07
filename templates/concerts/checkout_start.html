@@ -1,0 +1,21 @@
+{% load concerts_tags %}
+<section class="checkout-panel">
+  <h1 class="page-title">Оформление заказа</h1>
+  <p class="muted">{{ concert.artist_name }} · {{ concert.event_date|date:'d.m.Y' }} · {{ concert.venue }}</p>
+  <form method="post" action="{% url 'order-create' %}" data-async-form data-fragment="#checkout-flow" class="stack-form checkout-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="quantity-list">
+      {% if ticket_types.vip %}<label class="quantity-row"><span><strong>{{ ticket_types.vip.title }}</strong><small>{{ ticket_types.vip.price|money }} сум за билет</small></span><input class="quantity-input" data-price="{{ ticket_types.vip.price }}" type="number" name="quantity_vip" value="{{ form.quantity_vip.value|default:0 }}" min="0" max="20" id="id_quantity_vip">{% for error in form.quantity_vip.errors %}<small class="field-error">{{ error }}</small>{% endfor %}</label>{% endif %}
+      {% if ticket_types.standard %}<label class="quantity-row"><span><strong>{{ ticket_types.standard.title }}</strong><small>{{ ticket_types.standard.price|money }} сум за билет</small></span><input class="quantity-input" data-price="{{ ticket_types.standard.price }}" type="number" name="quantity_standard" value="{{ form.quantity_standard.value|default:0 }}" min="0" max="20" id="id_quantity_standard">{% for error in form.quantity_standard.errors %}<small class="field-error">{{ error }}</small>{% endfor %}</label>{% endif %}
+      {% if ticket_types.fan_zone %}<label class="quantity-row"><span><strong>{{ ticket_types.fan_zone.title }}</strong><small>{{ ticket_types.fan_zone.price|money }} сум за билет</small></span><input class="quantity-input" data-price="{{ ticket_types.fan_zone.price }}" type="number" name="quantity_fan_zone" value="{{ form.quantity_fan_zone.value|default:0 }}" min="0" max="20" id="id_quantity_fan_zone">{% for error in form.quantity_fan_zone.errors %}<small class="field-error">{{ error }}</small>{% endfor %}</label>{% endif %}
+    </div>
+    <div class="total-row"><span>Итого</span><strong id="order-total-preview">0 сум</strong></div>
+    <div class="section-label">Контактные данные</div>
+    <div class="customer-summary">
+      <div class="customer-summary-field"><span>Номер телефона:&nbsp;</span><strong>{{ profile.phone|default:'Номер не указан' }}</strong></div>
+      <a class="text-link" data-spa-nav href="{% url 'profile-edit' %}?next={% url 'order-create' %}">Изменить данные профиля ↗</a>
+    </div>
+    <button class="button button-primary button-wide" type="submit">Перейти к оплате <span aria-hidden="true">↗</span></button>
+  </form>
+</section>

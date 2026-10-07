@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Мои данные · Samarkand Live{% endblock %}
+{% block content %}
+<main class="auth-layout">
+  <section class="auth-card">
+    <a class="back-link" data-spa-nav href="{% url 'dashboard' %}">← Мои заказы</a>
+    <p class="eyebrow">Личный кабинет</p><h1 class="page-title">Мои данные</h1>
+    <p class="muted">Эти данные будут автоматически указаны в заказе билетов.</p>
+    <div id="profile-form-container">{% include 'concerts/profile_form.html' %}</div>
+  </section>
+  <aside class="auth-aside"><span class="aside-number">ПРОФИЛЬ ПОКУПАТЕЛЯ</span><p>Контакты и билеты<br>в одном месте.</p><span class="muted">Проверьте телефон и почту, чтобы данные в заказе были верными.</span></aside>
+</main>
+{% endblock %}

@@ -1,0 +1,5 @@
+{% extends 'base.html' %}
+{% block title %}Проверка билета · Samarkand Live{% endblock %}
+{% block content %}
+<main class="verify-page"><section class="verify-card {% if valid %}verify-valid{% else %}verify-invalid{% endif %}"><span class="verify-icon">{% if valid %}✓{% else %}×{% endif %}</span><p class="eyebrow">Проверка билета</p><h1 class="page-title">{% if valid %}Билет действителен{% else %}Билет недействителен{% endif %}</h1><p>{{ ticket.order.concert.artist_name }} · {{ ticket.order.concert.event_date|date:'d.m.Y' }}</p><p>{{ ticket.order.concert.venue }} · {{ ticket.order_item.ticket_type.title }}</p><p class="verify-scan-count">Количество сканирований администратором: <strong>{{ ticket.admin_scan_count }}</strong></p>{% if admin_scan and not already_used %}<div class="notice notice-success">Администратор проверил билет. Вход зарегистрирован.</div>{% elif ticket.checked_in_at %}<div class="notice notice-warn">Вход по билету уже отмечен. Повторный проход не допускается.</div>{% endif %}</section></main>
+{% endblock %}

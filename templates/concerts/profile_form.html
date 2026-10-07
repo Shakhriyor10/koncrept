@@ -1,0 +1,5 @@
+<form method="post" action="{% url 'profile-edit' %}{% if next %}?next={{ next|urlencode }}{% endif %}" data-async-form data-fragment="#profile-form-container" class="stack-form profile-form">
+  {% csrf_token %}{% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+  {% for field in form %}<label class="field"><span>{{ field.label }}</span>{{ field }}{% for error in field.errors %}<small class="field-error">{{ error }}</small>{% endfor %}</label>{% endfor %}
+  <button class="button button-primary button-wide" type="submit">Сохранить данные</button>
+</form>

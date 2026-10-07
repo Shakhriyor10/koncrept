@@ -1,0 +1,20 @@
+[Unit]
+Description=Koncrept Django concert ticket application
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/koncrept
+EnvironmentFile=/etc/koncrept.env
+RuntimeDirectory=koncrept
+RuntimeDirectoryMode=0750
+ExecStart=/var/www/koncrept/.venv/bin/gunicorn --workers 3 --bind unix:/run/koncrept/gunicorn.sock --umask 007 --access-logfile - --error-logfile - koncrept.wsgi:application
+Restart=on-failure
+RestartSec=3
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

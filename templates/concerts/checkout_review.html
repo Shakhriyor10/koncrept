@@ -1,0 +1,8 @@
+{% load concerts_tags %}
+<section class="checkout-panel" data-review-watch data-status-url="{% url 'order-status' reference=order.reference %}" data-deadline="{{ order.review_deadline|date:'c' }}">
+  <p class="eyebrow">Шаг 03 · Проверка</p><h1 class="page-title">Чек отправлен</h1>
+  <p class="muted">Заказ <strong>{{ order.reference }}</strong>. Администратор сверит перевод и подтвердит заказ.</p>
+  <div class="review-clock"><span class="clock-label">Осталось на проверку</span><strong id="review-countdown">15:00</strong><span>Статус обновляется автоматически</span></div>
+  <div class="order-summary"><div><span>Количество билетов</span><strong>{{ order.ticket_count }}</strong></div><div class="order-summary-total"><span>Сумма</span><strong>{{ order.total_amount|money }} сум</strong></div></div>
+  <a class="text-link" data-spa-nav href="{% url 'dashboard' %}">Перейти в мои заказы ↗</a>
+</section>

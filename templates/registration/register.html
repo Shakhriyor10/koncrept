@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block title %}Регистрация · Samarkand Live{% endblock %}
+{% block content %}
+<main class="auth-layout"><section class="auth-card" id="auth-form">
+  <p class="eyebrow">Создайте аккаунт</p><h1 class="page-title">Регистрация</h1>
+  {% include 'registration/register_form.html' %}
+</section><aside class="auth-aside"><span class="aside-number">02 / 02</span><p>Билеты и заказы<br>в одном месте.</p></aside></main>
+{% endblock %}

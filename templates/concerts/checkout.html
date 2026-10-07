@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Оформление заказа · Samarkand Live{% endblock %}
+{% block content %}
+<main class="checkout-layout">
+  <div class="checkout-main">
+    <a class="back-link" data-spa-nav href="{% url 'home' %}">← К концерту</a>
+    <div id="checkout-flow">
+      {% include flow_template with order=flow_context.order concert=flow_context.concert form=flow_context.form cards=flow_context.cards ticket_types=flow_context.ticket_types profile=flow_context.profile %}
+    </div>
+  </div>
+  <aside class="checkout-aside"><span class="aside-number">SAMARKAND · 2026</span><p>Эльдар<br>Далгатов</p><span>25 октября · Silk Road Samarkand</span></aside>
+</main>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load concerts_tags %}
+{% block title %}Панель администратора · Samarkand Live{% endblock %}
+{% block content %}
+<main class="staff-page">
+  <div class="section-heading staff-heading">
+    <div><p class="eyebrow">Управление заказами</p><h1 class="page-title">Панель администратора</h1><p class="muted">Проверяйте переводы, подтверждайте заказы и выдавайте QR-билеты.</p></div>
+    <div class="staff-pending"><strong>{{ pending_count }}</strong><span>на проверке</span></div>
+  </div>
+  <nav class="staff-filters" aria-label="Фильтр заказов">
+    <a class="{% if status_filter == 'under_review' %}active{% endif %}" href="{% url 'staff-orders' %}?status=under_review">На проверке</a>
+    {% for value, label in statuses %}<a class="{% if status_filter == value %}active{% endif %}" href="{% url 'staff-orders' %}?status={{ value }}">{{ label }}</a>{% endfor %}
+    <a class="{% if status_filter == 'all' %}active{% endif %}" href="{% url 'staff-orders' %}?status=all">Все заказы</a>
+  </nav>
+
+  {% if orders %}
+    <div class="staff-order-list">
+      {% for order in orders %}
+      <article class="staff-order-card">
+        <header class="staff-order-head"><div><span class="order-ref">{{ order.reference }}</span><small>{{ order.created_at|date:'d.m.Y H:i' }} · {{ order.concert.artist_name }}</small></div><span class="order-status status-{{ order.status }}">{{ order.get_status_display }}</span></header>
+        <div class="staff-order-info">
+          <div><small>Телефон покупателя</small><strong>{{ order.phone }}</strong></div>
+          <div><small>Заказ</small>{% for item in order.items.all %}<span>{{ item.ticket_type.title }} × {{ item.quantity }} — {{ item.total|money }} сум</span>{% endfor %}<strong>Итого: {{ order.total_amount|money }} сум</strong></div>
+        </div>
+        {% if order.proofs.all %}<div class="staff-proof-list"><strong>Оплата</strong>{% for proof in order.proofs.all %}<div class="staff-proof"><span>{% if proof.payment_card %}{{ proof.payment_card.get_provider_display }} · {{ proof.payment_card.card_number|slice:'-4:' }}{% endif %}</span>{% if proof.file %}<a class="text-link" href="{% url 'proof-download' proof_id=proof.pk %}">Скачать чек ↗</a>{% else %}<small class="muted">Чек не приложен</small>{% endif %}</div>{% endfor %}</div>{% endif %}
+        {% if order.status == 'under_review' or order.status == 'expired' %}
+        <div class="staff-review-deadline">{% if order.status == 'expired' %}Срок истёк, но чек всё ещё можно обработать{% else %}Срок проверки: {{ order.review_deadline|date:'d.m.Y H:i' }}{% endif %}</div>
+        <div class="staff-actions">
+          <form method="post" action="{% url 'staff-review-order' reference=order.reference %}" data-async-form>{% csrf_token %}<input type="hidden" name="action" value="approve"><button class="button button-primary" type="submit">Подтвердить и выдать билеты</button></form>
+          <form method="post" action="{% url 'staff-review-order' reference=order.reference %}" class="staff-reject-form" data-async-form>{% csrf_token %}<input type="hidden" name="action" value="reject"><input type="text" name="review_note" maxlength="500" placeholder="Причина отказа (необязательно)"><button class="button button-outline" type="submit">Отклонить чек</button></form>
+        </div>
+        {% elif order.review_note %}<p class="staff-review-note">Причина отклонения: {{ order.review_note }}</p>{% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  {% else %}<div class="empty-state"><strong>Заказов в этом разделе нет</strong><span>Новые чеки появятся здесь автоматически.</span></div>{% endif %}
+</main>
+{% endblock %}

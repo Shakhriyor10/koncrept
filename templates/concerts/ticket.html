@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Билет {{ ticket.order.reference }} · Samarkand Live{% endblock %}
+{% block content %}
+<main class="ticket-page">
+  <a class="back-link" data-spa-nav href="{% url 'dashboard' %}">← Мои заказы</a>
+  <article class="ticket-artwork{% if ticket.order_item.ticket_type.code == 'vip' %} ticket-artwork-vip{% endif %}" aria-label="{{ ticket.order_item.ticket_type.title }} билет Эльдара Далгатова">
+    {% if ticket.order_item.ticket_type.code == 'vip' %}
+      <img class="ticket-artwork-background" src="{% static 'vip-ticket-bg.png' %}" alt="Дизайн VIP-билета на концерт Эльдара Далгатова">
+    {% else %}
+      <img class="ticket-artwork-background" src="{% static 'standard-ticket-bg.png' %}" alt="Дизайн стандартного билета на концерт Эльдара Далгатова">
+    {% endif %}
+    <span class="ticket-artwork-number">{{ ticket.pk|stringformat:'02d' }}</span>
+    <img class="ticket-artwork-qr" src="{% url 'ticket-qr' token=ticket.token %}" alt="QR-код билета">
+  </article>
+  <div class="ticket-actions"><a class="button button-primary" href="{% url 'order-tickets-pdf' reference=ticket.order.reference %}" download>Скачать все билеты · PDF ↓</a><button class="button button-outline print-button" onclick="window.print()" type="button">Распечатать билет</button></div>
+</main>
+{% endblock %}

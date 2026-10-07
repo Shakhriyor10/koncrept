@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% load concerts_tags %}
+{% block title %}Мои заказы · Samarkand Live{% endblock %}
+{% block content %}
+<main class="dashboard-page"><div class="section-heading"><div><p class="eyebrow">Личный кабинет</p><h1 class="page-title">Мои заказы</h1></div><div class="dashboard-actions"><a data-spa-nav class="button button-outline" href="{% url 'profile-edit' %}">Мои данные</a><a data-spa-nav class="button button-primary" href="{% url 'order-create' %}">Купить билет ↗</a></div></div>
+  {% if orders %}<div class="dashboard-orders">{% for order in orders %}<a data-spa-nav class="dashboard-order" href="{% if order.status == 'awaiting_payment' or order.status == 'rejected' %}{% url 'order-payment' reference=order.reference %}{% else %}{% url 'order-detail' reference=order.reference %}{% endif %}"><span class="order-ref">{{ order.reference }}<small>{{ order.created_at|date:'d.m.Y H:i' }}</small></span><span class="order-event">{{ order.concert.artist_name }}<small>{{ order.ticket_count }} билет(а/ов)</small></span><span class="order-status status-{{ order.status }}">{{ order.get_status_display }}</span><strong>{{ order.total_amount|money }} сум</strong><span aria-hidden="true">↗</span></a>{% if order.status == 'approved' %}<a class="text-link dashboard-pdf-link" href="{% url 'order-tickets-pdf' reference=order.reference %}" download>Скачать {{ order.ticket_count }} билета · PDF ↓</a>{% endif %}{% endfor %}</div>{% else %}<div class="empty-state"><span>Пока заказов нет</span><a data-spa-nav class="text-link" href="{% url 'order-create' %}">Выбрать билеты ↗</a></div>{% endif %}
+</main>
+{% endblock %}

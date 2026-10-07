@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Сканер билетов · Samarkand Live{% endblock %}
+{% block content %}
+<main class="staff-scan-page" data-ticket-scanner data-scan-url="{% url 'staff-scan-ticket' %}">
+  <a class="back-link" href="{% url 'staff-orders' %}">← Панель администратора</a>
+  <section class="staff-scan-card">
+    <p class="eyebrow">Контроль входа</p>
+    <h1 class="page-title">Сканер билетов</h1>
+    <p class="muted">Наведите камеру на QR-код. Каждое сканирование действительного билета учитывается в его карточке.</p>
+    <div class="scanner-actions">
+      <button class="button button-primary" id="scan-start" type="button">Включить камеру</button>
+      <button class="button button-outline" id="scan-stop" type="button" hidden>Остановить</button>
+    </div>
+    <video class="ticket-camera" id="ticket-camera" autoplay muted playsinline hidden></video>
+    <div class="scan-result" id="scan-result" data-state="idle" role="status" aria-live="polite">Камера выключена. Вы также можете ввести или вставить ссылку QR-кода вручную.</div>
+    <form class="manual-scan-form" id="manual-scan-form" method="post" action="{% url 'staff-scan-ticket' %}">
+      {% csrf_token %}
+      <label class="field" for="scan-token">QR-код или ссылка на билет<input id="scan-token" name="token" type="text" autocomplete="off" placeholder="Вставьте ссылку или токен билета" required></label>
+      <button class="button button-outline" type="submit">Проверить билет</button>
+    </form>
+  </section>
+</main>
+{% endblock %}
+{% block extra_scripts %}<script src="{% static 'js/ticket-scanner.js' %}" defer></script>{% endblock %}

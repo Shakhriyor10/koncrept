@@ -1,0 +1,6 @@
+<section class="checkout-panel">
+  <p class="eyebrow">Проверка задерживается</p><h1 class="page-title">Чек ещё на проверке</h1>
+  <div class="notice notice-warn"><strong>Срок ожидания по заказу {{ order.reference }} истёк.</strong><span>Чек остаётся у администратора: заказ всё ещё могут подтвердить или отклонить. Проверьте статус позже.</span></div>
+  <a class="button button-primary" data-spa-nav href="{% url 'order-detail' reference=order.reference %}">Обновить статус ↻</a>
+  <a class="button button-outline" data-spa-nav href="{% url 'dashboard' %}">Все мои заказы</a>
+</section>
