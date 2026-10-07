@@ -14,12 +14,7 @@ if not SECRET_KEY:
         raise RuntimeError("DJANGO_SECRET_KEY must be set when DJANGO_DEBUG=0.")
     SECRET_KEY = "local-development-only-not-for-production"
 ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.environ.get(
-        "DJANGO_ALLOWED_HOSTS",
-        "majormotors.uz,www.majormotors.uz,127.0.0.1,localhost",
-    ).split(",")
-    if host.strip()
+"*"
 ]
 PUBLIC_SITE_URL = os.environ.get("PUBLIC_SITE_URL", "https://majormotors.uz").rstrip("/")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
