@@ -23,7 +23,11 @@
           <div><small>Заказ</small>{% for item in order.items.all %}<span>{{ item.ticket_type.title }} × {{ item.quantity }} — {{ item.total|money }} сум</span>{% endfor %}<strong>Итого: {{ order.total_amount|money }} сум</strong></div>
         </div>
         {% if order.proofs.all %}<div class="staff-proof-list"><strong>Оплата</strong>{% for proof in order.proofs.all %}<div class="staff-proof"><span>{% if proof.payment_card %}{{ proof.payment_card.get_provider_display }} · {{ proof.payment_card.card_number|slice:'-4:' }}{% endif %}</span>{% if proof.file %}<a class="text-link" href="{% url 'proof-download' proof_id=proof.pk %}">Скачать чек ↗</a>{% else %}<small class="muted">Чек не приложен</small>{% endif %}</div>{% endfor %}</div>{% endif %}
-        {% if order.status == 'under_review' or order.status == 'expired' %}
+        {% if order.status == 'approved' %}
+        <div class="staff-actions">
+          <form method="post" action="{% url 'staff-review-order' reference=order.reference %}" class="staff-reject-form" data-async-form>{% csrf_token %}<input type="hidden" name="action" value="cancel"><input type="text" name="review_note" maxlength="500" placeholder="Причина отмены (необязательно)"><button class="button button-outline" type="submit">Отменить заказ и билеты</button></form>
+        </div>
+        {% elif order.status == 'under_review' or order.status == 'expired' %}
         <div class="staff-review-deadline">{% if order.status == 'expired' %}Срок истёк, но чек всё ещё можно обработать{% else %}Срок проверки: {{ order.review_deadline|date:'d.m.Y H:i' }}{% endif %}</div>
         <div class="staff-actions">
           <form method="post" action="{% url 'staff-review-order' reference=order.reference %}" data-async-form>{% csrf_token %}<input type="hidden" name="action" value="approve"><button class="button button-primary" type="submit">Подтвердить и выдать билеты</button></form>

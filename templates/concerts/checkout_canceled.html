@@ -1,0 +1,8 @@
+<section class="checkout-state">
+  <div class="notice notice-error">
+    <strong>Заказ отменён</strong>
+    <span>Выданные билеты аннулированы. Скачать билет или пройти по его QR-коду больше нельзя.</span>
+    {% if order.review_note %}<span>{{ order.review_note }}</span>{% endif %}
+  </div>
+  <a class="button button-outline" data-spa-nav href="{% url 'dashboard' %}">← К моим заказам</a>
+</section>

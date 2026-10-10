@@ -110,6 +110,7 @@ class Order(models.Model):
         UNDER_REVIEW = "under_review", "Проверка оплаты"
         APPROVED = "approved", "Оплачено · билеты готовы"
         REJECTED = "rejected", "Чек отклонён"
+        CANCELED = "canceled", "Заказ отменён · билеты аннулированы"
         EXPIRED = "expired", "Время проверки истекло"
 
     public_id = models.UUIDField(default=uuid4, unique=True, editable=False)

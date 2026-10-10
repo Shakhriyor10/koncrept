@@ -54,3 +54,17 @@ def reject_order(order_id, reviewer, note=""):
             order.review_note = note.strip() or "Не удалось подтвердить перевод. Проверьте чек и отправьте его ещё раз."
             order.save(update_fields=("status", "reviewed_at", "reviewed_by", "review_note"))
     return order
+
+
+def cancel_order(order_id, reviewer, note=""):
+    """Cancel an issued order so its tickets and QR codes can no longer be used."""
+    with transaction.atomic():
+        order = Order.objects.select_for_update().get(pk=order_id)
+        if order.status != Order.Status.APPROVED:
+            raise ValidationError("Отменить можно только одобренный заказ с выданными билетами.")
+        order.status = Order.Status.CANCELED
+        order.reviewed_at = timezone.now()
+        order.reviewed_by = reviewer
+        order.review_note = note.strip() or "Заказ отменён администратором. Билеты аннулированы."
+        order.save(update_fields=("status", "reviewed_at", "reviewed_by", "review_note"))
+    return order

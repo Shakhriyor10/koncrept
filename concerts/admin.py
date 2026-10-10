@@ -16,7 +16,7 @@ from .models import (
     Ticket,
     TicketType,
 )
-from .services import approve_order, reject_order
+from .services import approve_order, cancel_order, reject_order
 
 
 @admin.register(Concert)
@@ -105,7 +105,7 @@ class OrderAdmin(admin.ModelAdmin):
         "review_note",
     )
     inlines = (OrderItemInline, PaymentProofInline, TicketInline)
-    actions = ("approve_selected", "reject_selected")
+    actions = ("approve_selected", "reject_selected", "cancel_approved_selected")
     list_select_related = ("user", "concert")
 
     def has_add_permission(self, request):
@@ -151,6 +151,26 @@ class OrderAdmin(admin.ModelAdmin):
                 self.message_user(request, f"{order.reference}: {error}", level=messages.WARNING)
         if rejected:
             self.message_user(request, f"Отклонено заказов: {rejected}.", level=messages.SUCCESS)
+        if errors:
+            self.message_user(request, f"Не обработано заказов: {errors}.", level=messages.WARNING)
+
+    @admin.action(description="Отменить одобренный заказ и аннулировать билеты")
+    def cancel_approved_selected(self, request, queryset):
+        canceled = 0
+        errors = 0
+        for order in queryset:
+            try:
+                cancel_order(order.pk, request.user)
+                canceled += 1
+            except ValidationError as error:
+                errors += 1
+                self.message_user(request, f"{order.reference}: {error}", level=messages.WARNING)
+        if canceled:
+            self.message_user(
+                request,
+                f"Отменено заказов: {canceled}. Билеты аннулированы, PDF и QR больше недействительны.",
+                level=messages.SUCCESS,
+            )
         if errors:
             self.message_user(request, f"Не обработано заказов: {errors}.", level=messages.WARNING)
 

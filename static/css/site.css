@@ -230,6 +230,7 @@ h1,h2,p { margin-top: 0; }
 .order-status { color: var(--muted); }
 .status-approved { color: #8ed5ac; }
 .status-rejected,.status-expired { color: #fa969a; }
+.status-canceled { color: #fa969a; }
 .empty-state { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; padding: 50px 0; color: var(--muted); }
 .ticket-page { padding: 40px 0 80px; }
 .ticket-artwork { position: relative; width: min(100%,1000px); margin: 0 auto; overflow: hidden; background: #191919; box-shadow: 0 25px 90px rgba(0,0,0,.34); }

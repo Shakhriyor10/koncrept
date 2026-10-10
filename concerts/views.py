@@ -33,7 +33,7 @@ from .models import (
 )
 from .pdf_tickets import build_order_tickets_pdf
 from .phones import normalize_stored_phone
-from .services import approve_order, ensure_approved_order_tickets, reject_order
+from .services import approve_order, cancel_order, ensure_approved_order_tickets, reject_order
 from .telegram_bot import handle_review_callback, notify_order_for_review, verify_webhook_secret
 from .ticket_urls import ticket_verification_url
 
@@ -202,6 +202,8 @@ def staff_scan_ticket(request):
         except Ticket.DoesNotExist:
             return JsonResponse({"valid": False, "message": "Билет не найден."}, status=404)
 
+        if ticket.order.status == Order.Status.CANCELED:
+            return JsonResponse({"valid": False, "message": "Билет недействителен: заказ отменён, билет аннулирован."}, status=400)
         if ticket.order.status != Order.Status.APPROVED:
             return JsonResponse({"valid": False, "message": "Билет недействителен: заказ не одобрен."}, status=400)
 
@@ -237,17 +239,19 @@ def staff_review_order(request, reference):
             approve_order(order.pk, request.user)
         elif action == "reject":
             reject_order(order.pk, request.user, request.POST.get("review_note", ""))
+        elif action == "cancel":
+            cancel_order(order.pk, request.user, request.POST.get("review_note", ""))
         else:
             raise Http404("Неизвестное действие.")
     except ValidationError as error:
         messages.error(request, str(error))
     else:
-        messages.success(
-            request,
-            "Заказ подтверждён, билеты выпущены."
-            if action == "approve"
-            else "Чек отклонён. Покупатель сможет отправить новый.",
-        )
+        success_message = {
+            "approve": "Заказ подтверждён, билеты выпущены.",
+            "reject": "Чек отклонён. Покупатель сможет отправить новый.",
+            "cancel": "Заказ отменён. Выданные билеты аннулированы.",
+        }[action]
+        messages.success(request, success_message)
     if _is_async(request):
         return JsonResponse({"redirect": reverse("staff-orders")})
     return redirect("staff-orders")
@@ -356,6 +360,8 @@ def _state_template(order):
         return "concerts/checkout_review.html"
     if order.status == Order.Status.APPROVED:
         return "concerts/checkout_approved.html"
+    if order.status == Order.Status.CANCELED:
+        return "concerts/checkout_canceled.html"
     return "concerts/checkout_expired.html"
 
 
