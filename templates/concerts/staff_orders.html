@@ -7,6 +7,12 @@
     <div><p class="eyebrow">Управление заказами</p><h1 class="page-title">Панель администратора</h1><p class="muted">Проверяйте переводы, подтверждайте заказы и выдавайте QR-билеты.</p></div>
     <div class="staff-pending"><strong>{{ pending_count }}</strong><span>на проверке</span></div>
   </div>
+  <section class="staff-ticket-stats" aria-label="Активные билеты">
+    <article class="staff-ticket-stat staff-ticket-stat-total"><span>Активные билеты</span><strong>{{ active_ticket_total }}</strong><small>не погашены сканером</small></article>
+    <article class="staff-ticket-stat"><span>VIP</span><strong>{{ active_vip_count }}</strong></article>
+    <article class="staff-ticket-stat"><span>Стандарт</span><strong>{{ active_standard_count }}</strong></article>
+    <article class="staff-ticket-stat"><span>Фан-зона</span><strong>{{ active_fan_zone_count }}</strong></article>
+  </section>
   <nav class="staff-filters" aria-label="Фильтр заказов">
     <a class="{% if status_filter == 'under_review' %}active{% endif %}" href="{% url 'staff-orders' %}?status=under_review">На проверке</a>
     {% for value, label in statuses %}<a class="{% if status_filter == value %}active{% endif %}" href="{% url 'staff-orders' %}?status={{ value }}">{{ label }}</a>{% endfor %}
@@ -25,7 +31,7 @@
         {% if order.proofs.all %}<div class="staff-proof-list"><strong>Оплата</strong>{% for proof in order.proofs.all %}<div class="staff-proof"><span>{% if proof.payment_card %}{{ proof.payment_card.get_provider_display }} · {{ proof.payment_card.card_number|slice:'-4:' }}{% endif %}</span>{% if proof.file %}<a class="text-link" href="{% url 'proof-download' proof_id=proof.pk %}">Скачать чек ↗</a>{% else %}<small class="muted">Чек не приложен</small>{% endif %}</div>{% endfor %}</div>{% endif %}
         {% if order.status == 'approved' %}
         <div class="staff-actions">
-          <form method="post" action="{% url 'staff-review-order' reference=order.reference %}" class="staff-reject-form" data-async-form>{% csrf_token %}<input type="hidden" name="action" value="cancel"><input type="text" name="review_note" maxlength="500" placeholder="Причина отмены (необязательно)"><button class="button button-outline" type="submit">Отменить заказ и билеты</button></form>
+          <form method="post" action="{% url 'staff-review-order' reference=order.reference %}" class="staff-reject-form" data-async-form data-confirm="Вы точно хотите отменить заказ и аннулировать все выданные билеты? Это действие запретит скачивание билета, а его QR станет недействительным.">{% csrf_token %}<input type="hidden" name="action" value="cancel"><input type="text" name="review_note" maxlength="500" placeholder="Причина отмены (необязательно)"><button class="button button-outline" type="submit">Отменить заказ и билеты</button></form>
         </div>
         {% elif order.status == 'under_review' or order.status == 'expired' %}
         <div class="staff-review-deadline">{% if order.status == 'expired' %}Срок истёк, но чек всё ещё можно обработать{% else %}Срок проверки: {{ order.review_deadline|date:'d.m.Y H:i' }}{% endif %}</div>

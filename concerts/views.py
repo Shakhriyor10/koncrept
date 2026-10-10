@@ -13,6 +13,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
+from django.db.models import Count
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -159,6 +160,12 @@ def staff_orders(request):
         orders = orders.filter(status=status_filter)
     else:
         status_filter = "all"
+    active_ticket_rows = (
+        Ticket.objects.filter(order__status=Order.Status.APPROVED, checked_in_at__isnull=True)
+        .values("order_item__ticket_type__code")
+        .annotate(total=Count("id"))
+    )
+    active_ticket_counts = {row["order_item__ticket_type__code"]: row["total"] for row in active_ticket_rows}
     return render(request, "concerts/staff_orders.html", {
         "orders": orders,
         "status_filter": status_filter,
@@ -166,6 +173,10 @@ def staff_orders(request):
         "pending_count": Order.objects.filter(
             status__in=(Order.Status.UNDER_REVIEW, Order.Status.EXPIRED)
         ).count(),
+        "active_ticket_total": sum(active_ticket_counts.values()),
+        "active_vip_count": active_ticket_counts.get(TicketType.Code.VIP, 0),
+        "active_standard_count": active_ticket_counts.get(TicketType.Code.STANDARD, 0),
+        "active_fan_zone_count": active_ticket_counts.get(TicketType.Code.FAN_ZONE, 0),
     })
 
 

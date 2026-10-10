@@ -218,6 +218,7 @@
     const form = event.target.closest("form[data-async-form]");
     if (!form) return;
     event.preventDefault();
+    if (form.dataset.confirm && !window.confirm(form.dataset.confirm)) return;
     const submit = form.querySelector("button[type='submit']");
     if (submit?.disabled) return;
     const oldText = submit?.textContent;
