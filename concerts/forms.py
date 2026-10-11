@@ -78,6 +78,18 @@ class OrderCreateForm(forms.Form):
         return cleaned
 
 
+class StaffTicketCreateForm(OrderCreateForm):
+    phone = forms.CharField(
+        label="Номер телефона покупателя",
+        max_length=13,
+        min_length=13,
+        widget=forms.TextInput(attrs=phone_widget_attrs()),
+    )
+
+    def clean_phone(self):
+        return validate_uzbek_phone(self.cleaned_data["phone"])
+
+
 class CustomerDetailsForm(forms.Form):
     phone = forms.CharField(label="Номер телефона", max_length=13, min_length=13, widget=forms.TextInput(attrs=phone_widget_attrs()))
 

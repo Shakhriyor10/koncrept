@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load concerts_tags %}
+{% block title %}Создать билет · Панель администратора{% endblock %}
+{% block content %}
+<main class="staff-page">
+  <a class="back-link" href="{% url 'staff-orders' %}">← Панель администратора</a>
+  <section class="checkout-panel staff-create-ticket-panel">
+    <p class="eyebrow">Выдача билета администратором</p>
+    <h1 class="page-title">Создать билеты</h1>
+    <p class="muted">{{ concert.artist_name }} · {{ concert.event_date|date:'d.m.Y' }} · {{ concert.venue }}</p>
+    <form method="post" class="stack-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors }}</div>{% endif %}
+      <label class="field"><span>{{ form.phone.label }}</span>{{ form.phone }}{% for error in form.phone.errors %}<small class="field-error">{{ error }}</small>{% endfor %}</label>
+      <div class="section-label">Количество билетов</div>
+      <div class="quantity-list">
+        {% if ticket_types.vip %}<label class="quantity-row"><span><strong>{{ ticket_types.vip.title }}</strong><small>{{ ticket_types.vip.price|money }} сум за билет</small></span><input class="quantity-input" type="number" name="quantity_vip" value="{{ form.quantity_vip.value|default_if_none:'0' }}" min="0" max="20">{% for error in form.quantity_vip.errors %}<small class="field-error">{{ error }}</small>{% endfor %}</label>{% endif %}
+        {% if ticket_types.standard %}<label class="quantity-row"><span><strong>{{ ticket_types.standard.title }}</strong><small>{{ ticket_types.standard.price|money }} сум за билет</small></span><input class="quantity-input" type="number" name="quantity_standard" value="{{ form.quantity_standard.value|default_if_none:'0' }}" min="0" max="20">{% for error in form.quantity_standard.errors %}<small class="field-error">{{ error }}</small>{% endfor %}</label>{% endif %}
+        {% if ticket_types.fan_zone %}<label class="quantity-row"><span><strong>{{ ticket_types.fan_zone.title }}</strong><small>{{ ticket_types.fan_zone.price|money }} сум за билет</small></span><input class="quantity-input" type="number" name="quantity_fan_zone" value="{{ form.quantity_fan_zone.value|default_if_none:'0' }}" min="0" max="20">{% for error in form.quantity_fan_zone.errors %}<small class="field-error">{{ error }}</small>{% endfor %}</label>{% endif %}
+      </div>
+      <p class="muted">Найденному пользователю билет добавится в текущий аккаунт. Для нового номера будет создан аккаунт: логин — номер телефона, пароль — <strong>majormotors</strong>.</p>
+      <button class="button button-primary button-wide" type="submit">Создать и выдать билеты ↗</button>
+    </form>
+  </section>
+</main>
+{% endblock %}

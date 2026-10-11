@@ -8,6 +8,7 @@
     <p class="hero-subtitle">{{ concert.tagline|default:'Вечер любимых песен и живых эмоций' }}</p>
     <div class="event-facts">
       <div><span>Дата</span><strong>{{ concert.event_date|date:'d.m.Y' }}</strong></div>
+      <div><span>Начало</span><strong>18:00</strong></div>
       <div><span>Место</span><strong>{{ concert.venue }}</strong></div>
     </div>
     <a class="button button-primary" data-spa-nav href="{% url 'order-create' %}">Выбрать билеты <span aria-hidden="true">↗</span></a>

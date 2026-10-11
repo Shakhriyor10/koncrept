@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Билеты выпущены · Панель администратора{% endblock %}
+{% block content %}
+<main class="staff-page">
+  <section class="checkout-panel staff-create-ticket-panel">
+    <p class="eyebrow">Билеты выпущены</p>
+    <h1 class="page-title">Заказ {{ order.reference }}</h1>
+    <div class="notice notice-success">
+      <strong>Создано билетов: {{ order.ticket_count }}</strong>
+      <span>Покупатель: {{ order.phone }}</span>
+      {% if account_created %}
+        <span>Создан новый профиль. Логин: {{ order.phone }} · пароль: majormotors</span>
+      {% else %}
+        <span>Использован существующий профиль пользователя.</span>
+      {% endif %}
+    </div>
+    <div class="staff-actions">
+      <a class="button button-primary" href="{% url 'order-tickets-pdf' reference=order.reference %}">Скачать билеты PDF ↓</a>
+      <a class="button button-outline" href="{% url 'staff-orders' %}?status=approved">К выданным билетам</a>
+    </div>
+  </section>
+</main>
+{% endblock %}

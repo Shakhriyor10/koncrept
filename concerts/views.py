@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 
 import qrcode
 from django.contrib import messages
-from django.contrib.auth import login as auth_login, logout as auth_logout
+from django.contrib.auth import get_user_model, login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -21,7 +21,14 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 
-from .forms import CustomerDetailsForm, OrderCreateForm, PaymentProofForm, PhoneAuthenticationForm, RegistrationForm
+from .forms import (
+    CustomerDetailsForm,
+    OrderCreateForm,
+    PaymentProofForm,
+    PhoneAuthenticationForm,
+    RegistrationForm,
+    StaffTicketCreateForm,
+)
 from .models import (
     Concert,
     CustomerProfile,
@@ -151,7 +158,7 @@ def staff_orders(request):
     orders = (
         Order.objects.select_related("user", "concert", "reviewed_by")
         .prefetch_related("items__ticket_type", "proofs__payment_card")
-        .order_by("status", "created_at")
+        .order_by("status", "-created_at")
     )
     status_filter = request.GET.get("status", "under_review")
     if status_filter == Order.Status.UNDER_REVIEW:
@@ -177,6 +184,87 @@ def staff_orders(request):
         "active_vip_count": active_ticket_counts.get(TicketType.Code.VIP, 0),
         "active_standard_count": active_ticket_counts.get(TicketType.Code.STANDARD, 0),
         "active_fan_zone_count": active_ticket_counts.get(TicketType.Code.FAN_ZONE, 0),
+    })
+
+
+@login_required
+def staff_create_ticket(request):
+    if not request.user.is_staff:
+        raise PermissionDenied
+    concert = _active_concert()
+    ticket_types = {item.code: item for item in concert.ticket_types.filter(active=True)}
+    form = StaffTicketCreateForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        quantities = {
+            TicketType.Code.VIP: form.cleaned_data["quantity_vip"],
+            TicketType.Code.STANDARD: form.cleaned_data["quantity_standard"],
+            TicketType.Code.FAN_ZONE: form.cleaned_data["quantity_fan_zone"],
+        }
+        if any(quantity and code not in ticket_types for code, quantity in quantities.items()):
+            form.add_error(None, "Один из выбранных типов билетов сейчас недоступен. Обновите страницу.")
+        else:
+            phone = form.cleaned_data["phone"]
+            user_model = get_user_model()
+            with transaction.atomic():
+                customer = user_model.objects.filter(username=phone).first()
+                if customer is None:
+                    for profile in CustomerProfile.objects.select_related("user").all():
+                        if normalize_stored_phone(profile.phone) == phone:
+                            customer = profile.user
+                            break
+
+                account_created = customer is None
+                if account_created:
+                    customer = user_model.objects.create_user(username=phone, password="majormotors")
+                CustomerProfile.objects.update_or_create(user=customer, defaults={"phone": phone})
+
+                order = Order.objects.create(
+                    user=customer,
+                    concert=concert,
+                    status=Order.Status.APPROVED,
+                    phone=phone,
+                    reviewed_at=timezone.now(),
+                    reviewed_by=request.user,
+                    review_note="Билет выдан администратором вручную.",
+                )
+                sequence = 1
+                for code, quantity in quantities.items():
+                    if not quantity:
+                        continue
+                    item = OrderItem.objects.create(
+                        order=order,
+                        ticket_type=ticket_types[code],
+                        quantity=quantity,
+                        unit_price=ticket_types[code].price,
+                    )
+                    for _ in range(quantity):
+                        Ticket.objects.create(order=order, order_item=item, sequence=sequence)
+                        sequence += 1
+
+            request.session[f"manual-ticket-account-created:{order.reference}"] = account_created
+            return redirect("staff-ticket-created", reference=order.reference)
+
+    return render(request, "concerts/staff_ticket_create.html", {
+        "concert": concert,
+        "ticket_types": ticket_types,
+        "form": form,
+    })
+
+
+@login_required
+def staff_ticket_created(request, reference):
+    if not request.user.is_staff:
+        raise PermissionDenied
+    order = get_object_or_404(
+        Order.objects.select_related("concert", "user"),
+        reference=reference,
+        status=Order.Status.APPROVED,
+    )
+    account_created = request.session.pop(f"manual-ticket-account-created:{order.reference}", False)
+    return render(request, "concerts/staff_ticket_created.html", {
+        "order": order,
+        "account_created": account_created,
     })
 
 
@@ -462,9 +550,10 @@ def order_tickets_pdf(request, reference):
     order = get_object_or_404(
         Order.objects.select_related("concert").prefetch_related("items__ticket_type", "tickets__order_item__ticket_type"),
         reference=reference,
-        user=request.user,
         status=Order.Status.APPROVED,
     )
+    if order.user_id != request.user.pk and not request.user.is_staff:
+        raise Http404
     ensure_approved_order_tickets(order.pk)
     getattr(order, "_prefetched_objects_cache", {}).pop("tickets", None)
     pdf_file = build_order_tickets_pdf(request, order)
