@@ -99,6 +99,12 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static", BASE_DIR / "assets"]
+# Content-hash filenames invalidate cached CSS/JS after each collectstatic.
+# Non-strict mode lets local runserver fall back to unhashed URLs before a manifest exists.
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "concerts.storage.LenientManifestStaticFilesStorage"},
+}
 MEDIA_ROOT = Path(os.environ.get("DJANGO_MEDIA_ROOT", BASE_DIR / "private_uploads"))
 MEDIA_URL = "/media/"
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024

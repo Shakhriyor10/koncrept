@@ -12,6 +12,7 @@ urlpatterns = [
     path("rewards/wheel/status/", views.wheel_status, name="wheel-status"),
     path("rewards/wheel/spin/", views.wheel_spin, name="wheel-spin"),
     path("staff/orders/", views.staff_orders, name="staff-orders"),
+    path("staff/wheel-rewards/", views.staff_wheel_rewards, name="staff-wheel-rewards"),
     path("staff/tickets/create/", views.staff_create_ticket, name="staff-ticket-create"),
     path("staff/tickets/<str:reference>/created/", views.staff_ticket_created, name="staff-ticket-created"),
     path("staff/tickets/scan/", views.staff_ticket_scanner, name="staff-ticket-scanner"),

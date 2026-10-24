@@ -14,6 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import Count
+from django.core.paginator import Paginator
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
@@ -244,6 +245,14 @@ def staff_orders(request):
 
 
 @login_required
+def staff_wheel_rewards(request):
+    if not request.user.is_staff:
+        raise PermissionDenied
+    rewards = WheelReward.objects.select_related("user", "user__profile").order_by("-spun_at")
+    page_obj = Paginator(rewards, 50).get_page(request.GET.get("page"))
+    return render(request, "concerts/staff_wheel_rewards.html", {"page_obj": page_obj, "now": timezone.now()})
+
+
 def staff_create_ticket(request):
     if not request.user.is_staff:
         raise PermissionDenied

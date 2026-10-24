@@ -116,7 +116,10 @@ class WheelReward(models.Model):
         GIFT_STANDARD = "gift_standard", "Стандартный билет в подарок"
         GIFT_VIP = "gift_vip", "VIP-билет в подарок"
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="wheel_rewards")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE, related_name="wheel_rewards"
+    )
+    guest_key = models.CharField(max_length=64, blank=True, db_index=True)
     code = models.CharField(max_length=24, choices=Code.choices)
     spun_at = models.DateTimeField(default=timezone.now)
     expires_at = models.DateTimeField()
@@ -128,7 +131,26 @@ class WheelReward(models.Model):
         verbose_name_plural = "призы барабана"
 
     def __str__(self):
-        return f"{self.user} · {self.get_code_display()}"
+        customer = self.user if self.user_id else "Гость"
+        return f"{customer} · {self.get_code_display()}"
+
+    @property
+    def customer_label(self):
+        if not self.user_id:
+            return "Гость"
+        try:
+            profile = self.user.profile
+        except CustomerProfile.DoesNotExist:
+            profile = None
+        return (profile.phone if profile else "") or self.user.get_username()
+
+    @property
+    def state_label(self):
+        if self.claimed_at:
+            return "Использован / билет выдан"
+        if self.expires_at <= timezone.now():
+            return "Срок истёк"
+        return "Активен"
 
     @property
     def discount_percent(self):

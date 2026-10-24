@@ -4,7 +4,7 @@
 {% block content %}
 <main class="staff-page">
   <div class="section-heading staff-heading">
-    <div><p class="eyebrow">Управление заказами</p><h1 class="page-title">Панель администратора</h1><p class="muted">Проверяйте переводы, подтверждайте заказы и выдавайте QR-билеты.</p><a class="button button-primary" href="{% url 'staff-ticket-create' %}">Создать билет вручную ↗</a></div>
+    <div><p class="eyebrow">Управление заказами</p><h1 class="page-title">Панель администратора</h1><p class="muted">Проверяйте переводы, подтверждайте заказы и выдавайте QR-билеты.</p><div class="staff-heading-actions"><a class="button button-primary" href="{% url 'staff-ticket-create' %}">Создать билет вручную ↗</a><a class="button button-outline" href="{% url 'staff-wheel-rewards' %}">Выигрыши барабана скидок ↗</a></div></div>
     <div class="staff-pending"><strong>{{ pending_count }}</strong><span>на проверке</span></div>
   </div>
   <section class="staff-ticket-stats" aria-label="Активные билеты">

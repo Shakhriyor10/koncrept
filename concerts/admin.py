@@ -222,10 +222,15 @@ class PaymentProofAdmin(admin.ModelAdmin):
 
 @admin.register(WheelReward)
 class WheelRewardAdmin(admin.ModelAdmin):
-    list_display = ("user", "code", "spun_at", "expires_at", "claimed_at")
+    list_select_related = ("user", "user__profile")
+    list_display = ("customer", "code", "spun_at", "expires_at", "claimed_at")
     list_filter = ("code", "spun_at", "claimed_at")
-    search_fields = ("user__username", "user__profile__phone")
-    readonly_fields = ("user", "code", "spun_at", "expires_at", "claimed_at")
+    search_fields = ("user__username", "user__profile__phone", "guest_key")
+    readonly_fields = ("user", "guest_key", "code", "spun_at", "expires_at", "claimed_at")
+
+    @admin.display(description="Пользователь")
+    def customer(self, obj):
+        return obj.customer_label
 
     def has_add_permission(self, request):
         return False

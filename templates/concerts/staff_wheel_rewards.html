@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load concerts_tags %}
+{% block title %}Выигрыши барабана скидок · Панель администратора{% endblock %}
+{% block content %}
+<main class="staff-page">
+  <a class="back-link" href="{% url 'staff-orders' %}">← Панель администратора</a>
+  <div class="section-heading staff-heading">
+    <div><p class="eyebrow">Журнал призов</p><h1 class="page-title">Барабан скидок</h1><p class="muted">Выигрыши зарегистрированных пользователей и гостей.</p></div>
+    <div class="staff-pending"><strong>{{ page_obj.paginator.count }}</strong><span>вращений</span></div>
+  </div>
+  {% if page_obj.object_list %}
+    <div class="wheel-reward-list">
+      {% for reward in page_obj %}
+        <article class="wheel-reward-row">
+          <div class="wheel-reward-customer"><small>Пользователь</small><strong>{{ reward.customer_label }}</strong></div>
+          <div class="wheel-reward-prize"><small>Выигрыш</small><strong>{{ reward.get_code_display }}</strong></div>
+          <div><small>Время вращения</small><span>{{ reward.spun_at|date:'d.m.Y H:i' }}</span></div>
+          <div><small>Статус</small><span class="wheel-reward-state {% if reward.claimed_at %}is-claimed{% elif reward.expires_at <= now %}is-expired{% endif %}">{{ reward.state_label }}</span></div>
+        </article>
+      {% endfor %}
+    </div>
+    {% if page_obj.has_other_pages %}<nav class="wheel-reward-pagination" aria-label="Страницы журнала">
+      {% if page_obj.has_previous %}<a class="button button-outline" href="?page={{ page_obj.previous_page_number }}">← Новее</a>{% endif %}
+      <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}<a class="button button-outline" href="?page={{ page_obj.next_page_number }}">Старее →</a>{% endif %}
+    </nav>{% endif %}
+  {% else %}<div class="empty-state"><strong>Пока нет выигрышей</strong><span>Новые вращения появятся здесь автоматически.</span></div>{% endif %}
+</main>
+{% endblock %}

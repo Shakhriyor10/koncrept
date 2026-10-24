@@ -11,6 +11,7 @@ from .phones import normalize_stored_phone
 
 SPIN_INTERVAL = timedelta(hours=24)
 GUEST_SESSION_KEY = "wheel_guest_reward"
+GUEST_ID_SESSION_KEY = "wheel_guest_id"
 PRIZES = (
     {"code": WheelReward.Code.DISCOUNT_10, "label": "Скидка 10% на один билет", "weight": 100, "percent": 10},
     {"code": WheelReward.Code.DISCOUNT_20, "label": "Скидка 20% на один билет", "weight": 80, "percent": 20},
@@ -85,16 +86,34 @@ def _session_state(request):
     return {**state, "spun_at_dt": spun_at, "expires_at_dt": expires_at}
 
 
+def _guest_key(request):
+    key = request.session.get(GUEST_ID_SESSION_KEY)
+    if not isinstance(key, str) or len(key) < 32:
+        key = secrets.token_urlsafe(32)
+        request.session[GUEST_ID_SESSION_KEY] = key
+        request.session.modified = True
+    return key
+
+
 def get_guest_reward_status(request):
     now = timezone.now()
-    state = _session_state(request)
-    if not state:
-        return {"authenticated": False, "can_spin": True, "next_spin_at": None, "reward": None}
-    next_spin_at = state["spun_at_dt"] + SPIN_INTERVAL
-    reward = _reward_payload(
-        state.get("code", ""), state["spun_at_dt"], state["expires_at_dt"],
-        claimed=bool(state.get("claimed", False)),
-    )
+    key = _guest_key(request)
+    latest = WheelReward.objects.filter(user__isnull=True, guest_key=key).order_by("-spun_at").first()
+    if latest:
+        next_spin_at = latest.spun_at + SPIN_INTERVAL
+        reward = _reward_payload(
+            latest.code, latest.spun_at, latest.expires_at, claimed=latest.claimed_at is not None
+        )
+    else:
+        # Support a guest prize issued before guest rewards were persisted in the database.
+        state = _session_state(request)
+        if not state:
+            return {"authenticated": False, "can_spin": True, "next_spin_at": None, "reward": None}
+        next_spin_at = state["spun_at_dt"] + SPIN_INTERVAL
+        reward = _reward_payload(
+            state.get("code", ""), state["spun_at_dt"], state["expires_at_dt"],
+            claimed=bool(state.get("claimed", False)),
+        )
     return {
         "authenticated": False,
         "can_spin": now >= next_spin_at,
@@ -123,7 +142,7 @@ def _issue_gift_ticket(user, reward):
         status=Order.Status.APPROVED,
         phone=phone,
         reviewed_at=now,
-        review_note=f"{prize['label']} — подарок барабана удачи.",
+        review_note=f"{prize['label']} — подарок барабана скидок.",
         wheel_reward=reward,
     )
     item = OrderItem.objects.create(
@@ -161,14 +180,25 @@ def spin_for_user(user):
 
 def spin_for_guest(request):
     now = timezone.now()
+    key = _guest_key(request)
     state = _session_state(request)
-    if state:
-        next_spin_at = state["spun_at_dt"] + SPIN_INTERVAL
+    latest = WheelReward.objects.filter(user__isnull=True, guest_key=key).order_by("-spun_at").first()
+    last_spun_at = latest.spun_at if latest else (state["spun_at_dt"] if state else None)
+    if last_spun_at:
+        next_spin_at = last_spun_at + SPIN_INTERVAL
         if now < next_spin_at:
             return None, next_spin_at
     prize = draw_prize()
     expires_at = now + SPIN_INTERVAL
+    reward = WheelReward.objects.create(
+        user=None,
+        guest_key=key,
+        code=prize["code"],
+        spun_at=now,
+        expires_at=expires_at,
+    )
     request.session[GUEST_SESSION_KEY] = {
+        "reward_id": reward.pk,
         "code": prize["code"],
         "spun_at": now.isoformat(),
         "expires_at": expires_at.isoformat(),
@@ -181,8 +211,21 @@ def spin_for_guest(request):
 def attach_guest_reward(request, user):
     state = _session_state(request)
     if not state:
-        request.session.pop(GUEST_SESSION_KEY, None)
-        return None, None
+        guest_key = request.session.get(GUEST_ID_SESSION_KEY, "")
+        saved_reward = WheelReward.objects.filter(
+            user__isnull=True, guest_key=guest_key
+        ).order_by("-spun_at").first() if guest_key else None
+        if saved_reward:
+            state = {
+                "reward_id": saved_reward.pk,
+                "code": saved_reward.code,
+                "spun_at_dt": saved_reward.spun_at,
+                "expires_at_dt": saved_reward.expires_at,
+                "claimed": saved_reward.claimed_at is not None,
+            }
+        else:
+            request.session.pop(GUEST_SESSION_KEY, None)
+            return None, None
     now = timezone.now()
     if state["expires_at_dt"] <= now or state.get("claimed"):
         request.session.pop(GUEST_SESSION_KEY, None)
@@ -194,10 +237,26 @@ def attach_guest_reward(request, user):
         if latest and now < latest.spun_at + SPIN_INTERVAL:
             request.session.pop(GUEST_SESSION_KEY, None)
             return None, None
-        reward, gift_order = _create_reward_for_user(
-            user, state["code"], state["spun_at_dt"], state["expires_at_dt"]
-        )
+        reward = None
+        reward_id = state.get("reward_id")
+        guest_key = request.session.get(GUEST_ID_SESSION_KEY, "")
+        if reward_id:
+            reward = WheelReward.objects.select_for_update().filter(
+                pk=reward_id, user__isnull=True, guest_key=guest_key
+            ).first()
+        if reward is None:
+            reward = WheelReward.objects.create(
+                user=None,
+                guest_key=guest_key,
+                code=state["code"],
+                spun_at=state["spun_at_dt"],
+                expires_at=state["expires_at_dt"],
+            )
+        reward.user = user
+        reward.save(update_fields=("user",))
+        gift_order = _issue_gift_ticket(user, reward)
     request.session.pop(GUEST_SESSION_KEY, None)
+    request.session.pop(GUEST_ID_SESSION_KEY, None)
     request.session.modified = True
     return reward, gift_order
 
