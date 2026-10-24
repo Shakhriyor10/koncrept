@@ -15,6 +15,7 @@ from .models import (
     PaymentProof,
     Ticket,
     TicketType,
+    WheelReward,
 )
 from .services import approve_order, cancel_order, reject_order
 
@@ -217,3 +218,17 @@ class PaymentProofAdmin(admin.ModelAdmin):
             return "Чек не приложен"
         url = reverse("proof-download", kwargs={"proof_id": obj.pk})
         return format_html('<a href="{}">Скачать чек</a>', url)
+
+
+@admin.register(WheelReward)
+class WheelRewardAdmin(admin.ModelAdmin):
+    list_display = ("user", "code", "spun_at", "expires_at", "claimed_at")
+    list_filter = ("code", "spun_at", "claimed_at")
+    search_fields = ("user__username", "user__profile__phone")
+    readonly_fields = ("user", "code", "spun_at", "expires_at", "claimed_at")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

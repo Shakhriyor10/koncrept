@@ -38,12 +38,21 @@ from .models import (
     PaymentProof,
     Ticket,
     TicketType,
+    WheelReward,
 )
 from .pdf_tickets import build_order_tickets_pdf
 from .phones import normalize_stored_phone
 from .services import approve_order, cancel_order, ensure_approved_order_tickets, reject_order
 from .telegram_bot import handle_review_callback, notify_order_for_review, verify_webhook_secret
 from .ticket_urls import ticket_verification_url
+from .wheel import (
+    active_discount_for_user,
+    attach_guest_reward,
+    get_guest_reward_status,
+    get_user_reward_status,
+    spin_for_guest,
+    spin_for_user,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +81,15 @@ def home(request):
     return render(request, "concerts/home.html", {"concert": concert, "ticket_types": ticket_types})
 
 
+def _attach_guest_prize(request, user):
+    reward, gift_order = attach_guest_reward(request, user)
+    if gift_order:
+        messages.success(request, f"Поздравляем! Подарочный билет добавлен в профиль. Заказ {gift_order.reference}.")
+    elif reward:
+        messages.success(request, f"Ваш приз «{reward.get_code_display()}» сохранён в профиле на оставшееся время действия.")
+    return reward
+
+
 def register(request):
     if request.user.is_authenticated:
         return redirect(_safe_next(request))
@@ -79,7 +97,8 @@ def register(request):
     if request.method == "POST" and form.is_valid():
         user = form.save()
         auth_login(request, user)
-        target = _safe_next(request)
+        guest_reward = _attach_guest_prize(request, user)
+        target = _safe_next(request, fallback="dashboard" if guest_reward else "home")
         if _is_async(request):
             return JsonResponse({"redirect": target})
         return redirect(target)
@@ -94,8 +113,10 @@ def login_view(request):
         return redirect(_safe_next(request))
     form = PhoneAuthenticationForm(request, data=request.POST or None)
     if request.method == "POST" and form.is_valid():
-        auth_login(request, form.get_user())
-        target = _safe_next(request)
+        user = form.get_user()
+        auth_login(request, user)
+        guest_reward = _attach_guest_prize(request, user)
+        target = _safe_next(request, fallback="dashboard" if guest_reward else "home")
         if _is_async(request):
             return JsonResponse({"redirect": target})
         return redirect(target)
@@ -103,6 +124,36 @@ def login_view(request):
         html = render_to_string("registration/login_form.html", {"form": form, "next": request.GET.get("next", "")}, request)
         return JsonResponse({"html": html}, status=422)
     return render(request, "registration/login.html", {"form": form, "next": request.GET.get("next", "")})
+
+
+def wheel_status(request):
+    status = get_user_reward_status(request.user) if request.user.is_authenticated else get_guest_reward_status(request)
+    return JsonResponse(status)
+
+
+def wheel_spin(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Используйте POST для запуска барабана."}, status=405)
+    if request.user.is_authenticated:
+        reward, gift_order, next_spin_at = spin_for_user(request.user)
+        if next_spin_at:
+            return JsonResponse({"error": "Следующее вращение будет доступно через 24 часа.", "next_spin_at": next_spin_at.isoformat()}, status=429)
+        return JsonResponse({
+            "reward": {
+                "code": reward.code,
+                "label": reward.get_code_display(),
+                "percent": reward.discount_percent,
+                "gift": reward.code in (WheelReward.Code.GIFT_STANDARD, WheelReward.Code.GIFT_VIP),
+                "expires_at": reward.expires_at.isoformat(),
+                "claimed": reward.claimed_at is not None,
+            },
+            "gift_order_reference": gift_order.reference if gift_order else None,
+            "authenticated": True,
+        })
+    reward, next_spin_at = spin_for_guest(request)
+    if next_spin_at:
+        return JsonResponse({"error": "Следующее вращение будет доступно через 24 часа.", "next_spin_at": next_spin_at.isoformat()}, status=429)
+    return JsonResponse({"reward": reward, "authenticated": False})
 
 
 @login_required
@@ -120,7 +171,12 @@ def dashboard(request):
     orders = request.user.concert_orders.select_related("concert").prefetch_related("items", "tickets")
     for order in orders:
         order.expire_if_due()
-    return render(request, "concerts/dashboard.html", {"orders": orders})
+    active_reward = WheelReward.objects.filter(
+        user=request.user,
+        claimed_at__isnull=True,
+        expires_at__gt=timezone.now(),
+    ).order_by("-spun_at").first()
+    return render(request, "concerts/dashboard.html", {"orders": orders, "active_reward": active_reward})
 
 
 @login_required
@@ -380,6 +436,18 @@ def order_create(request):
             form.add_error(None, "Один из выбранных типов билетов сейчас недоступен. Обновите страницу.")
         else:
             with transaction.atomic():
+                reward = active_discount_for_user(request.user, lock=True)
+                discounted_code = None
+                discount_amount = 0
+                if reward:
+                    eligible = [
+                        (ticket_types[code].price, code)
+                        for code, quantity in quantities.items()
+                        if quantity and code in ticket_types
+                    ]
+                    if eligible:
+                        unit_price, discounted_code = max(eligible)
+                        discount_amount = unit_price * reward.discount_percent // 100
                 order = Order.objects.create(
                     user=request.user,
                     concert=concert,
@@ -387,6 +455,7 @@ def order_create(request):
                     last_name="",
                     phone=profile.phone.strip(),
                     email="",
+                    wheel_reward=reward if discounted_code else None,
                 )
                 for code, quantity in quantities.items():
                     if quantity:
@@ -396,7 +465,11 @@ def order_create(request):
                             ticket_type=ticket_type,
                             quantity=quantity,
                             unit_price=ticket_type.price,
+                            discount_amount=discount_amount if code == discounted_code else 0,
                         )
+                if reward and discounted_code:
+                    reward.claimed_at = timezone.now()
+                    reward.save(update_fields=("claimed_at",))
             target = reverse("order-payment", kwargs={"reference": order.reference})
             if _is_async(request):
                 html = render_to_string(
@@ -407,7 +480,13 @@ def order_create(request):
                 return JsonResponse({"html": html, "url": target})
             return redirect(target)
 
-    context = {"concert": concert, "ticket_types": ticket_types, "form": form, "profile": profile}
+    context = {
+        "concert": concert,
+        "ticket_types": ticket_types,
+        "form": form,
+        "profile": profile,
+        "available_reward": active_discount_for_user(request.user),
+    }
     if _is_async(request):
         html = render_to_string("concerts/checkout_start.html", context, request)
         return JsonResponse({"html": html}, status=422)

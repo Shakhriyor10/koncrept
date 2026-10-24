@@ -1,0 +1,29 @@
+<dialog class="wheel-modal" data-wheel-modal data-wheel-status-url="{% url 'wheel-status' %}" data-wheel-spin-url="{% url 'wheel-spin' %}" data-wheel-authenticated="{% if request.user.is_authenticated %}1{% else %}0{% endif %}" data-wheel-identity="{% if request.user.is_authenticated %}user-{{ request.user.pk }}{% else %}guest{% endif %}" data-wheel-auto="{% if request.path == '/' or request.path == '/account/' or request.path == '/account/profile/' %}1{% else %}0{% endif %}" aria-labelledby="wheel-title">
+  <button class="wheel-close" type="button" data-wheel-close aria-label="Закрыть">×</button>
+  <div class="wheel-content">
+    <p class="eyebrow">Подарок к концерту</p>
+    <h2 id="wheel-title" class="page-title">Барабан удачи</h2>
+    <p class="wheel-intro">Крутите барабан и получите скидку или билет в подарок.</p>
+    <div class="wheel-stage">
+      <span class="wheel-pointer" aria-hidden="true">▼</span>
+      <svg class="wheel-disc" data-wheel-disc viewBox="0 0 300 300" role="img" aria-label="Барабан с призами">
+        <g class="wheel-sector" transform="rotate(0 150 150)"><path d="M150 150 L81 30 A138 138 0 0 1 219 30 Z"/><text x="150" y="48" text-anchor="middle">10%<tspan x="150" dy="16">СКИДКА</tspan></text></g>
+        <g class="wheel-sector" transform="rotate(60 150 150)"><path d="M150 150 L81 30 A138 138 0 0 1 219 30 Z"/><text x="150" y="48" text-anchor="middle">20%<tspan x="150" dy="16">СКИДКА</tspan></text></g>
+        <g class="wheel-sector" transform="rotate(120 150 150)"><path d="M150 150 L81 30 A138 138 0 0 1 219 30 Z"/><text x="150" y="48" text-anchor="middle">30%<tspan x="150" dy="16">СКИДКА</tspan></text></g>
+        <g class="wheel-sector" transform="rotate(180 150 150)"><path d="M150 150 L81 30 A138 138 0 0 1 219 30 Z"/><text x="150" y="48" text-anchor="middle">60%<tspan x="150" dy="16">СКИДКА</tspan></text></g>
+        <g class="wheel-sector" transform="rotate(240 150 150)"><path d="M150 150 L81 30 A138 138 0 0 1 219 30 Z"/><text x="150" y="48" text-anchor="middle">СТАНДАРТ<tspan x="150" dy="16">В ПОДАРОК</tspan></text></g>
+        <g class="wheel-sector" transform="rotate(300 150 150)"><path d="M150 150 L81 30 A138 138 0 0 1 219 30 Z"/><text x="150" y="48" text-anchor="middle">VIP<tspan x="150" dy="16">В ПОДАРОК</tspan></text></g>
+        <circle class="wheel-hub" cx="150" cy="150" r="24"/><circle class="wheel-hub-dot" cx="150" cy="150" r="7"/>
+      </svg>
+    </div>
+    <p class="wheel-result" data-wheel-result aria-live="polite">Нажмите кнопку и узнайте свой приз.</p>
+    <p class="wheel-countdown" data-wheel-countdown hidden></p>
+    <button class="button button-primary wheel-spin-button" type="button" data-wheel-spin>Крутить барабан ↻</button>
+    <div class="wheel-auth-cta" data-wheel-auth-cta hidden>
+      <p>Чтобы сохранить выигрыш, войдите или зарегистрируйтесь. Приз привяжется к вашему профилю.</p>
+      <div><a class="button button-primary" href="{% url 'register' %}?next={% url 'dashboard' %}">Создать профиль</a><a class="button button-outline" href="{% url 'login' %}?next={% url 'dashboard' %}">Войти</a></div>
+    </div>
+    <form class="visually-hidden" data-wheel-csrf>{% csrf_token %}</form>
+    <p class="wheel-error" data-wheel-error role="alert" hidden></p>
+  </div>
+</dialog>

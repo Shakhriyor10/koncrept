@@ -363,3 +363,43 @@ h1,h2,p { margin-top: 0; }
   .ticket-qr-large { width: 28mm; height: 28mm; }
 }
 
+
+
+/* Daily prize wheel */
+.wheel-modal { width: min(560px, calc(100vw - 28px)); max-width: none; max-height: min(92vh, 850px); overflow-y: auto; padding: clamp(24px,5vw,42px); border: 1px solid rgba(241,199,117,.42); border-radius: 18px; background: radial-gradient(ellipse at 50% 0%,rgba(127,19,34,.46),transparent 58%),#180d10; color: var(--ink); box-shadow: 0 28px 100px rgba(0,0,0,.72),0 0 55px rgba(210,28,50,.14); }
+.wheel-modal[open] { animation: wheel-modal-in .3s cubic-bezier(.2,.75,.25,1) both; }
+.wheel-modal::backdrop { background: rgba(5,3,4,.78); backdrop-filter: blur(8px); }
+@keyframes wheel-modal-in { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.wheel-content { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.wheel-close { position: absolute; top: 12px; right: 14px; width: 38px; height: 38px; border: 1px solid var(--line); border-radius: 50%; background: rgba(255,255,255,.04); color: var(--ink); font-size: 25px; line-height: 1; cursor: pointer; }
+.wheel-content > .eyebrow { margin-bottom: 11px; }
+.wheel-content .page-title { font-size: clamp(36px,8vw,54px); }
+.wheel-intro { max-width: 370px; margin: 12px 0 4px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.wheel-stage { position: relative; width: min(310px,74vw); aspect-ratio: 1; margin: 18px auto 12px; padding: 9px; border: 1px solid rgba(239,197,110,.52); border-radius: 50%; background: linear-gradient(145deg,#f9e4ab,#9d6f27 48%,#f3d991); box-shadow: 0 12px 36px rgba(0,0,0,.5),0 0 32px rgba(232,184,89,.13); }
+.wheel-disc { display: block; width: 100%; height: 100%; overflow: visible; border-radius: 50%; transform: rotate(0deg); transition: transform 5.2s cubic-bezier(.12,.78,.12,1); filter: drop-shadow(0 4px 4px rgba(0,0,0,.34)); }
+.wheel-sector path { fill: #8f1424; stroke: #e2bf72; stroke-width: 2; }
+.wheel-sector:nth-of-type(even) path { fill: #243547; }
+.wheel-sector text { fill: #fff4d7; font: 700 10px "DM Sans",sans-serif; letter-spacing: .04em; paint-order: stroke; stroke: rgba(0,0,0,.22); stroke-width: 1px; }
+.wheel-hub { fill: #e2bf72; stroke: #fff2c6; stroke-width: 3; }
+.wheel-hub-dot { fill: #7a1320; }
+.wheel-pointer { position: absolute; z-index: 2; top: -6px; left: 50%; transform: translateX(-50%); color: #ffe6a1; font-size: 25px; line-height: 1; text-shadow: 0 2px 8px #000; }
+.wheel-result { min-height: 26px; margin: 8px 0; color: #ffe2a0; font-size: 15px; font-weight: 700; line-height: 1.5; }
+.wheel-countdown { margin: 0 0 15px; color: var(--muted); font-size: 12px; }
+.wheel-spin-button { min-width: min(100%,280px); }
+.wheel-auth-cta { width: 100%; margin-top: 15px; padding: 16px; border: 1px solid rgba(226,191,114,.26); border-radius: 10px; background: rgba(255,255,255,.035); }
+.wheel-auth-cta p { margin: 0 0 13px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.wheel-auth-cta > div { display: flex; justify-content: center; flex-wrap: wrap; gap: 9px; }
+.wheel-auth-cta .button { min-height: 44px; font-size: 9px; }
+.wheel-error { margin: 12px 0 0; color: #ff929a; font-size: 12px; }
+.wheel-profile-reward,.wheel-checkout-reward { display: grid; gap: 7px; margin: 0 0 20px; padding: 16px 18px; border: 1px solid rgba(226,191,114,.34); border-radius: 8px; background: linear-gradient(110deg,rgba(226,191,114,.09),rgba(255,255,255,.025)); }
+.wheel-profile-reward strong,.wheel-checkout-reward > span { color: #ffe2a0; font-size: 15px; }
+.wheel-profile-reward small,.wheel-checkout-reward small { color: var(--muted); font-size: 11px; line-height: 1.55; }
+.wheel-profile-reward .eyebrow { margin: 0; font-size: 8px; }
+.checkout-discount-note { display: block; margin-top: 5px; color: #ffe2a0; font-size: 10px; font-weight: 500; }
+.order-summary-original { color: var(--muted); text-decoration: line-through; }
+@media (max-width: 540px) {
+  .wheel-modal { padding: 26px 18px 22px; border-radius: 14px; }
+  .wheel-stage { width: min(270px,72vw); }
+  .wheel-sector text { font-size: 9px; }
+  .wheel-result { font-size: 13px; }
+}

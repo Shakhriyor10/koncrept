@@ -76,7 +76,15 @@ def _order_message(order, proof):
         lines.append(f"• {item.ticket_type.title} × {item.quantity} — {item.total:,} сум".replace(",", " "))
     lines.extend((
         f"Количество билетов: {order.ticket_count}",
-        f"Итого: {order.total_amount:,} сум".replace(",", " "),
+    ))
+    if order.wheel_reward_id:
+        lines.extend((
+            f"Приз барабана: {order.wheel_reward.get_code_display()}",
+            f"Стоимость до скидки: {order.gross_amount:,} сум".replace(",", " "),
+            f"Скидка: −{order.discount_amount:,} сум".replace(",", " "),
+        ))
+    lines.extend((
+        f"Итого к оплате: {order.total_amount:,} сум".replace(",", " "),
         f"Перевод на: {proof.payment_card.get_provider_display()} · карта **** {proof.payment_card.card_number.replace(' ', '')[-4:]}",
         f"Имя владельца карты: {proof.payment_card.cardholder}",
         f"Чек: {proof.original_name if proof.file else 'не приложен'}",

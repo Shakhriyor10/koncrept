@@ -2,6 +2,7 @@
   const money = new Intl.NumberFormat("ru-RU");
   let orderPoll = null;
   let countdownTick = null;
+  let wheelCountdownTick = null;
 
   async function navigate(url, addHistory = true) {
     try {
@@ -17,6 +18,7 @@
       if (addHistory) window.history.pushState({}, "", response.url);
       updateTotal();
       syncPaymentProvider();
+      initWheel();
       startReviewWatch();
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (_) {
@@ -25,13 +27,133 @@
   }
 
   function updateTotal() {
-    const inputs = document.querySelectorAll(".quantity-input[data-price]");
-    const total = [...inputs].reduce((sum, input) => {
-      const quantity = Math.max(0, Number.parseInt(input.value || "0", 10) || 0);
-      return sum + quantity * Number(input.dataset.price || 0);
-    }, 0);
+    const inputs = [...document.querySelectorAll(".quantity-input[data-price]")];
+    const quantities = inputs.map((input) => ({
+      input,
+      quantity: Math.max(0, Number.parseInt(input.value || "0", 10) || 0),
+      price: Number(input.dataset.price || 0),
+    }));
+    const gross = quantities.reduce((sum, item) => sum + item.quantity * item.price, 0);
+    const reward = document.querySelector("[data-wheel-discount]");
+    const percent = Number(reward?.dataset.wheelDiscount || 0);
+    const eligible = quantities.filter((item) => item.quantity > 0).sort((a, b) => b.price - a.price)[0];
+    const discount = percent && eligible ? Math.floor(eligible.price * percent / 100) : 0;
+    const total = Math.max(0, gross - discount);
     const output = document.querySelector("#order-total-preview");
     if (output) output.textContent = `${money.format(total)} сум`;
+    const discountOutput = document.querySelector("#order-discount-preview");
+    if (discountOutput) discountOutput.textContent = discount ? `−${money.format(discount)} сум на один билет` : "Выберите билет, чтобы применить скидку";
+  }
+
+  function wheelStoreGuest(status) {
+    if (status?.authenticated) return;
+    try {
+      if (status?.reward) localStorage.setItem("koncrept-wheel-guest-state", JSON.stringify(status));
+      else localStorage.removeItem("koncrept-wheel-guest-state");
+    } catch (_) { /* Storage may be unavailable in private browsing. */ }
+  }
+
+  function formatWheelCountdown(dateValue, output) {
+    if (wheelCountdownTick) window.clearInterval(wheelCountdownTick);
+    if (!dateValue || !output) { if (output) output.hidden = true; return; }
+    const tick = () => {
+      const seconds = Math.max(0, Math.ceil((new Date(dateValue).getTime() - Date.now()) / 1000));
+      output.hidden = seconds <= 0;
+      output.textContent = seconds > 0
+        ? `Следующая попытка через ${Math.floor(seconds / 3600)} ч ${String(Math.floor((seconds % 3600) / 60)).padStart(2, "0")} мин`
+        : "Новое вращение уже доступно";
+      if (seconds <= 0) {
+        window.clearInterval(wheelCountdownTick);
+        const modal = output.closest("[data-wheel-modal]");
+        const spin = modal?.querySelector("[data-wheel-spin]");
+        if (spin) { spin.hidden = false; spin.disabled = false; spin.textContent = "Крутить снова ↻"; }
+      }
+    };
+    tick();
+    wheelCountdownTick = window.setInterval(tick, 30000);
+  }
+
+  function renderWheelStatus(modal, status) {
+    const spin = modal.querySelector("[data-wheel-spin]");
+    const result = modal.querySelector("[data-wheel-result]");
+    const countdown = modal.querySelector("[data-wheel-countdown]");
+    const cta = modal.querySelector("[data-wheel-auth-cta]");
+    const expired = status.reward && new Date(status.reward.expires_at).getTime() <= Date.now();
+    if (result && status.reward) result.textContent = expired
+      ? `Ваш прошлый приз: ${status.reward.label}. Его срок действия закончился.`
+      : `Ваш приз: ${status.reward.label}!`;
+    if (spin) {
+      spin.hidden = !status.can_spin;
+      spin.disabled = !status.can_spin;
+      spin.textContent = status.reward ? "Крутить снова ↻" : "Крутить барабан ↻";
+    }
+    formatWheelCountdown(status.can_spin ? null : status.next_spin_at, countdown);
+    if (cta) cta.hidden = !(status.reward && !status.authenticated && !status.reward.claimed && !expired);
+    wheelStoreGuest(status);
+  }
+
+  async function initWheel() {
+    const modal = document.querySelector("[data-wheel-modal]");
+    if (!modal) return;
+    try {
+      const response = await fetch(modal.dataset.wheelStatusUrl, { credentials: "same-origin" });
+      if (!response.ok) return;
+      const status = await response.json();
+      renderWheelStatus(modal, status);
+      const autoKey = `koncrept-wheel-auto-shown:${modal.dataset.wheelIdentity || "guest"}`;
+      let lastAutoShown = 0;
+      try { lastAutoShown = Number(localStorage.getItem(autoKey) || 0); } catch (_) { /* Storage may be unavailable. */ }
+      if (modal.dataset.wheelAuto === "1" && (status.can_spin || status.reward) && Date.now() - lastAutoShown >= 24 * 60 * 60 * 1000) {
+        try { localStorage.setItem(autoKey, String(Date.now())); } catch (_) { /* Storage may be unavailable. */ }
+        if (!modal.open) modal.showModal();
+      }
+    } catch (_) { /* The visitor can still open the wheel manually. */ }
+  }
+
+  async function spinWheel(modal, button) {
+    const error = modal.querySelector("[data-wheel-error]");
+    const result = modal.querySelector("[data-wheel-result]");
+    const disc = modal.querySelector("[data-wheel-disc]");
+    if (error) { error.hidden = true; error.textContent = ""; }
+    button.disabled = true;
+    button.textContent = "Барабан вращается…";
+    try {
+      const token = modal.querySelector("[name=csrfmiddlewaretoken]")?.value;
+      const response = await fetch(modal.dataset.wheelSpinUrl, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "X-CSRFToken": token || "", "X-Requested-With": "XMLHttpRequest" },
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Не удалось запустить барабан.");
+      const prize = data.reward;
+      const codes = ["discount_10", "discount_20", "discount_30", "discount_60", "gift_standard", "gift_vip"];
+      const index = codes.indexOf(prize.code);
+      if (disc && index >= 0) {
+        const current = Number(disc.dataset.rotation || 0);
+        const base = Math.ceil(current / 360) * 360;
+        const finalRotation = base + 6 * 360 - index * 60;
+        disc.dataset.rotation = String(finalRotation);
+        disc.style.transform = `rotate(${finalRotation}deg)`;
+      }
+      if (result) result.textContent = `Ваш приз: ${prize.label}!`;
+      if (data.gift_order_reference && result) result.textContent += ` Билет уже добавлен в профиль: ${data.gift_order_reference}.`;
+      const statusResponse = await fetch(modal.dataset.wheelStatusUrl, { credentials: "same-origin" });
+      const status = statusResponse.ok ? await statusResponse.json() : null;
+      if (status) {
+        renderWheelStatus(modal, status);
+        if (!status.authenticated) {
+          const cta = modal.querySelector("[data-wheel-auth-cta]");
+          if (cta) cta.hidden = false;
+        }
+      } else {
+        button.hidden = true;
+      }
+    } catch (exception) {
+      if (error) { error.textContent = exception.message; error.hidden = false; }
+      button.disabled = false;
+      button.textContent = "Попробовать ещё раз ↻";
+    }
   }
 
   function formatUzbekPhone(input) {
@@ -149,6 +271,19 @@
   });
 
   document.addEventListener("click", async (event) => {
+    const wheelOpen = event.target.closest("[data-wheel-open]");
+    if (wheelOpen) {
+      event.preventDefault();
+      const modal = document.querySelector("[data-wheel-modal]");
+      if (modal && !modal.open) modal.showModal();
+      return;
+    }
+    const wheelClose = event.target.closest("[data-wheel-close]");
+    if (wheelClose) { document.querySelector("[data-wheel-modal]")?.close(); return; }
+    const wheelSpin = event.target.closest("[data-wheel-spin]");
+    if (wheelSpin) { event.preventDefault(); await spinWheel(wheelSpin.closest("[data-wheel-modal]"), wheelSpin); return; }
+    const wheelBackdrop = event.target.closest("[data-wheel-modal]");
+    if (wheelBackdrop && event.target === wheelBackdrop) wheelBackdrop.close();
     const infoButton = event.target.closest("[data-ticket-info]");
     if (infoButton) {
       event.preventDefault();
@@ -261,5 +396,6 @@
   document.querySelectorAll("[data-uz-phone]").forEach(formatUzbekPhone);
   syncPaymentProvider();
   updateTotal();
+  initWheel();
   startReviewWatch();
 })();

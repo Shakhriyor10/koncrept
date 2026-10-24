@@ -104,6 +104,45 @@ class PaymentCard(models.Model):
         return f"{self.get_provider_display()} •••• {self.card_number.replace(' ', '')[-4:]}"
 
 
+class WheelReward(models.Model):
+    class Code(models.TextChoices):
+        DISCOUNT_5 = "discount_5", "Скидка 5% (ранее)"
+        DISCOUNT_10 = "discount_10", "Скидка 10%"
+        DISCOUNT_20 = "discount_20", "Скидка 20%"
+        DISCOUNT_25 = "discount_25", "Скидка 25% (ранее)"
+        DISCOUNT_30 = "discount_30", "Скидка 30%"
+        DISCOUNT_50 = "discount_50", "Скидка 50% (ранее)"
+        DISCOUNT_60 = "discount_60", "Скидка 60%"
+        GIFT_STANDARD = "gift_standard", "Стандартный билет в подарок"
+        GIFT_VIP = "gift_vip", "VIP-билет в подарок"
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="wheel_rewards")
+    code = models.CharField(max_length=24, choices=Code.choices)
+    spun_at = models.DateTimeField(default=timezone.now)
+    expires_at = models.DateTimeField()
+    claimed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("-spun_at",)
+        verbose_name = "приз барабана"
+        verbose_name_plural = "призы барабана"
+
+    def __str__(self):
+        return f"{self.user} · {self.get_code_display()}"
+
+    @property
+    def discount_percent(self):
+        return {
+            self.Code.DISCOUNT_5: 5,
+            self.Code.DISCOUNT_10: 10,
+            self.Code.DISCOUNT_20: 20,
+            self.Code.DISCOUNT_25: 25,
+            self.Code.DISCOUNT_30: 30,
+            self.Code.DISCOUNT_50: 50,
+            self.Code.DISCOUNT_60: 60,
+        }.get(self.code, 0)
+
+
 class Order(models.Model):
     class Status(models.TextChoices):
         AWAITING_PAYMENT = "awaiting_payment", "Ожидает чек"
@@ -134,6 +173,9 @@ class Order(models.Model):
         related_name="reviewed_orders",
     )
     review_note = models.CharField(max_length=500, blank=True)
+    wheel_reward = models.ForeignKey(
+        WheelReward, null=True, blank=True, on_delete=models.SET_NULL, related_name="orders"
+    )
 
     class Meta:
         ordering = ("-created_at",)
@@ -146,6 +188,14 @@ class Order(models.Model):
     @property
     def total_amount(self):
         return sum(item.total for item in self.items.all())
+
+    @property
+    def gross_amount(self):
+        return sum(item.quantity * item.unit_price for item in self.items.all())
+
+    @property
+    def discount_amount(self):
+        return sum(item.discount_amount for item in self.items.all())
 
     @property
     def ticket_count(self):
@@ -164,6 +214,7 @@ class OrderItem(models.Model):
     ticket_type = models.ForeignKey(TicketType, on_delete=models.PROTECT, related_name="order_items")
     quantity = models.PositiveSmallIntegerField(validators=[MinValueValidator(1)])
     unit_price = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    discount_amount = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ("ticket_type__sort_order", "id")
@@ -173,7 +224,7 @@ class OrderItem(models.Model):
 
     @property
     def total(self):
-        return self.quantity * self.unit_price
+        return max(0, self.quantity * self.unit_price - self.discount_amount)
 
     def __str__(self):
         return f"{self.ticket_type.title} × {self.quantity}"
