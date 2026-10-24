@@ -595,6 +595,11 @@ def order_payment(request, reference):
                         reward = WheelReward.objects.select_for_update().get(pk=order.wheel_reward_id)
                         if reward.claimed_at:
                             form.add_error(None, "Эта скидка уже использована в другом заказе.")
+                        elif Order.objects.filter(
+                            wheel_reward=reward,
+                            status__in=(Order.Status.UNDER_REVIEW, Order.Status.EXPIRED, Order.Status.APPROVED),
+                        ).exclude(pk=order.pk).exists():
+                            form.add_error(None, "Эта скидка уже ожидает проверки в другом заказе.")
                     if not form.errors:
                         upload = form.cleaned_data.get("proof")
                         card = form.cleaned_data["payment_card"]
@@ -605,9 +610,6 @@ def order_payment(request, reference):
                             original_name=Path(upload.name).name[:255] if upload else "",
                         )
                         now = timezone.now()
-                        if reward:
-                            reward.claimed_at = now
-                            reward.save(update_fields=("claimed_at",))
                         order.status = Order.Status.UNDER_REVIEW
                         order.proof_submitted_at = now
                         order.review_deadline = now + timedelta(minutes=15)

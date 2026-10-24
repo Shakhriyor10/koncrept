@@ -148,6 +148,8 @@ class WheelReward(models.Model):
     def state_label(self):
         if self.claimed_at:
             return "Использован / билет выдан"
+        if self.orders.filter(status__in=(Order.Status.UNDER_REVIEW, Order.Status.EXPIRED)).exists():
+            return "Оплата на проверке"
         if self.expires_at <= timezone.now():
             return "Срок истёк"
         return "Активен"

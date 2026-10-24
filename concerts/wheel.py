@@ -277,7 +277,9 @@ def active_discount_for_user(user, *, lock=False):
             WheelReward.Code.DISCOUNT_50,
             WheelReward.Code.DISCOUNT_60,
         ),
-    ).order_by("-spun_at")
+    ).exclude(
+        orders__status__in=(Order.Status.UNDER_REVIEW, Order.Status.EXPIRED, Order.Status.APPROVED)
+    ).order_by("-spun_at").distinct()
     if lock:
         rewards = rewards.select_for_update()
     return rewards.first()
