@@ -403,3 +403,17 @@ h1,h2,p { margin-top: 0; }
   .wheel-sector text { font-size: 9px; }
   .wheel-result { font-size: 13px; }
 }
+
+.hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.wheel-home-button { min-height: 55px; display: inline-flex; align-items: center; gap: 10px; padding: 0 17px; border: 1px solid rgba(226,191,114,.42); border-radius: 2px; background: rgba(226,191,114,.07); color: #f4d995; cursor: pointer; font-size: 9px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; transition: background .2s,border-color .2s,transform .2s; }
+.wheel-home-button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.6; }
+.wheel-home-button:hover,.wheel-home-button:focus-visible { transform: translateY(-2px); border-color: rgba(255,226,160,.85); background: rgba(226,191,114,.15); outline: none; }
+.wheel-home-button:hover svg { animation: wheel-icon-spin .8s ease-in-out; }
+@keyframes wheel-icon-spin { to { transform: rotate(180deg); } }
+@media (max-width: 540px) { .hero-actions { align-items: stretch; } .wheel-home-button { justify-content: center; } }
+
+.wheel-floating-button { position: fixed; z-index: 20; right: max(22px, env(safe-area-inset-right)); bottom: max(22px, env(safe-area-inset-bottom)); border-radius: 999px; padding-inline: 18px; background: rgba(27,14,17,.94); box-shadow: 0 8px 28px rgba(0,0,0,.42),0 0 24px rgba(226,191,114,.12); backdrop-filter: blur(12px); }
+@media (max-width: 540px) {
+  .wheel-floating-button { right: max(14px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom)); min-height: 48px; padding-inline: 14px; font-size: 8px; }
+  .wheel-floating-button svg { width: 20px; height: 20px; }
+}
