@@ -12,13 +12,15 @@ from .phones import normalize_stored_phone
 SPIN_INTERVAL = timedelta(hours=24)
 GUEST_SESSION_KEY = "wheel_guest_reward"
 GUEST_ID_SESSION_KEY = "wheel_guest_id"
+# Chances are expressed as integer percentages out of 10,000 basis points.
+# The remaining 7.2% from the requested distribution is added to the 10% discount.
 PRIZES = (
-    {"code": WheelReward.Code.DISCOUNT_10, "label": "Скидка 10% на один билет", "weight": 100, "percent": 10},
-    {"code": WheelReward.Code.DISCOUNT_20, "label": "Скидка 20% на один билет", "weight": 80, "percent": 20},
-    {"code": WheelReward.Code.DISCOUNT_30, "label": "Скидка 30% на один билет", "weight": 40, "percent": 30},
-    {"code": WheelReward.Code.DISCOUNT_60, "label": "Скидка 60% на один билет", "weight": 10, "percent": 60},
-    {"code": WheelReward.Code.GIFT_STANDARD, "label": "Стандартный билет в подарок", "weight": 4, "percent": 0, "gift": True},
-    {"code": WheelReward.Code.GIFT_VIP, "label": "VIP-билет в подарок", "weight": 1, "percent": 0, "gift": True},
+    {"code": WheelReward.Code.DISCOUNT_10, "label": "Скидка 10% на один билет", "weight": 4975, "percent": 10},
+    {"code": WheelReward.Code.DISCOUNT_20, "label": "Скидка 20% на один билет", "weight": 3404, "percent": 20},
+    {"code": WheelReward.Code.DISCOUNT_30, "label": "Скидка 30% на один билет", "weight": 1402, "percent": 30},
+    {"code": WheelReward.Code.DISCOUNT_60, "label": "Скидка 60% на один билет", "weight": 126, "percent": 60},
+    {"code": WheelReward.Code.GIFT_STANDARD, "label": "Стандартный билет в подарок", "weight": 70, "percent": 0, "gift": True},
+    {"code": WheelReward.Code.GIFT_VIP, "label": "VIP-билет в подарок", "weight": 23, "percent": 0, "gift": True},
 )
 PRIZE_BY_CODE = {prize["code"]: prize for prize in PRIZES}
 
