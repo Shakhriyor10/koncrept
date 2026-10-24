@@ -15,9 +15,13 @@
         <tbody>
           {% for reward in page_obj %}
             <tr>
-              <td class="wheel-reward-user-cell" data-label="Пользователь"><div class="wheel-reward-user"><strong>{{ reward.customer_label }}</strong>{% if not reward.user_id %}<span class="wheel-guest-badge">Гость</span>{% else %}<span class="wheel-user-badge">Аккаунт</span>{% endif %}</div></td>
+              <td class="wheel-reward-user-cell" data-label="Пользователь">
+                <div class="wheel-reward-user">
+                  {% if reward.user_id %}<strong>{{ reward.customer_label }}</strong><span class="wheel-user-badge">Аккаунт</span>{% else %}<span class="wheel-guest-badge">Гость</span>{% endif %}
+                </div>
+              </td>
               <td class="wheel-reward-prize" data-label="Выигрыш"><span>{{ reward.get_code_display }}</span></td>
-              <td class="wheel-reward-time" data-label="Дата и время"><span>{{ reward.spun_at|date:'d.m.Y' }}</span><small>{{ reward.spun_at|date:'H:i' }}</small></td>
+              <td class="wheel-reward-time" data-label="Дата и время"><span>{{ reward.spun_at|date:'d.m.Y' }}<br><small>{{ reward.spun_at|date:'H:i' }}</small></span></td>
               <td data-label="Статус"><span class="wheel-reward-state {% if reward.claimed_at %}is-claimed{% elif reward.expires_at <= now %}is-expired{% endif %}">{{ reward.state_label }}</span></td>
             </tr>
           {% endfor %}
