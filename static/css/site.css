@@ -420,15 +420,21 @@ h1,h2,p { margin-top: 0; }
 
 .staff-heading-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 17px; }
 .staff-heading-actions .button { min-height: 44px; }
-.wheel-reward-list { display: grid; gap: 9px; margin-top: 28px; }
-.wheel-reward-row { display: grid; grid-template-columns: 1.1fr 1.5fr 1fr 1fr; align-items: center; gap: 18px; padding: 17px 19px; border: 1px solid var(--line); background: rgba(255,255,255,.025); }
-.wheel-reward-row > div { display: grid; gap: 6px; min-width: 0; }
-.wheel-reward-row small { color: var(--soft); font-size: 8px; letter-spacing: .14em; text-transform: uppercase; }
-.wheel-reward-row strong,.wheel-reward-row span { overflow-wrap: anywhere; font-size: 12px; }
-.wheel-reward-prize strong { color: #ffe2a0; }
-.wheel-reward-state.is-claimed { color: #94d6af; }
+.wheel-reward-table-wrap { margin-top: 28px; overflow-x: auto; border: 1px solid var(--line); background: rgba(255,255,255,.025); }
+.wheel-reward-table { width: 100%; min-width: 680px; border-collapse: collapse; text-align: left; }
+.wheel-reward-table th { padding: 14px 18px; border-bottom: 1px solid var(--line); color: var(--soft); font-size: 8px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
+.wheel-reward-table td { padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,.07); color: var(--muted); font-size: 12px; vertical-align: middle; }
+.wheel-reward-table tbody tr:last-child td { border-bottom: 0; }
+.wheel-reward-table tbody tr { transition: background .18s ease; }
+.wheel-reward-table tbody tr:hover { background: rgba(255,255,255,.035); }
+.wheel-reward-table td:first-child { color: var(--text); }
+.wheel-reward-table td:first-child strong { display: inline-block; overflow-wrap: anywhere; }
+.wheel-reward-table .wheel-reward-prize { color: #ffe2a0; font-weight: 600; }
+.wheel-reward-time { white-space: nowrap; }
+.wheel-guest-badge { display: inline-block; margin-left: 8px; padding: 4px 7px; border: 1px solid var(--line); border-radius: 999px; color: var(--soft); font-size: 8px; line-height: 1; text-transform: uppercase; vertical-align: middle; }
+.wheel-reward-state { display: inline-block; padding: 6px 9px; border: 1px solid rgba(255,255,255,.12); border-radius: 999px; color: var(--muted); font-size: 10px; white-space: nowrap; }
+.wheel-reward-state.is-claimed { border-color: rgba(148,214,175,.25); background: rgba(148,214,175,.08); color: #94d6af; }
 .wheel-reward-state.is-expired { color: var(--soft); }
 .wheel-reward-pagination { display: flex; justify-content: center; align-items: center; gap: 18px; margin: 24px 0; color: var(--muted); font-size: 11px; }
 .wheel-reward-pagination .button { min-height: 40px; }
-@media (max-width: 720px) { .wheel-reward-row { grid-template-columns: 1fr 1fr; gap: 13px; padding: 14px; } }
 @media (max-width: 420px) { .staff-heading-actions { flex-direction: column; align-items: stretch; } .wheel-reward-pagination { gap: 8px; font-size: 9px; } }

@@ -9,15 +9,20 @@
     <div class="staff-pending"><strong>{{ page_obj.paginator.count }}</strong><span>вращений</span></div>
   </div>
   {% if page_obj.object_list %}
-    <div class="wheel-reward-list">
-      {% for reward in page_obj %}
-        <article class="wheel-reward-row">
-          <div class="wheel-reward-customer"><small>Пользователь</small><strong>{{ reward.customer_label }}</strong></div>
-          <div class="wheel-reward-prize"><small>Выигрыш</small><strong>{{ reward.get_code_display }}</strong></div>
-          <div><small>Время вращения</small><span>{{ reward.spun_at|date:'d.m.Y H:i' }}</span></div>
-          <div><small>Статус</small><span class="wheel-reward-state {% if reward.claimed_at %}is-claimed{% elif reward.expires_at <= now %}is-expired{% endif %}">{{ reward.state_label }}</span></div>
-        </article>
-      {% endfor %}
+    <div class="wheel-reward-table-wrap">
+      <table class="wheel-reward-table">
+        <thead><tr><th scope="col">Пользователь</th><th scope="col">Выигрыш</th><th scope="col">Время вращения</th><th scope="col">Статус</th></tr></thead>
+        <tbody>
+          {% for reward in page_obj %}
+            <tr>
+              <td><strong>{{ reward.customer_label }}</strong>{% if not reward.user_id %}<span class="wheel-guest-badge">Гость</span>{% endif %}</td>
+              <td class="wheel-reward-prize">{{ reward.get_code_display }}</td>
+              <td class="wheel-reward-time">{{ reward.spun_at|date:'d.m.Y H:i' }}</td>
+              <td><span class="wheel-reward-state {% if reward.claimed_at %}is-claimed{% elif reward.expires_at <= now %}is-expired{% endif %}">{{ reward.state_label }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
     {% if page_obj.has_other_pages %}<nav class="wheel-reward-pagination" aria-label="Страницы журнала">
       {% if page_obj.has_previous %}<a class="button button-outline" href="?page={{ page_obj.previous_page_number }}">← Новее</a>{% endif %}
