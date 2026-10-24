@@ -422,17 +422,18 @@ h1,h2,p { margin-top: 0; }
 .staff-heading-actions .button { min-height: 44px; }
 .wheel-reward-table-wrap { margin-top: 26px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; background: linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018)); box-shadow: 0 18px 48px rgba(0,0,0,.16); }
 .wheel-reward-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; text-align: left; }
-.wheel-reward-table th { height: 50px; padding: 0 20px; border-bottom: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.025); color: #a99592; font-size: 9px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; }
-.wheel-reward-table th:nth-child(1) { width: 38%; }
-.wheel-reward-table th:nth-child(2) { width: 25%; }
-.wheel-reward-table th:nth-child(3) { width: 20%; }
-.wheel-reward-table th:nth-child(4) { width: 17%; }
-.wheel-reward-table td { height: 74px; padding: 13px 20px; border-bottom: 1px solid rgba(255,255,255,.065); color: #d7c9c6; font-size: 12px; vertical-align: middle; }
+.wheel-reward-table th { height: 54px; padding: 0 26px; text-align: left; border-bottom: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.025); color: #a99592; font-size: 9px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; }
+.wheel-reward-table th:nth-child(1) { width: 36%; }
+.wheel-reward-table th:nth-child(2) { width: 27%; }
+.wheel-reward-table th:nth-child(3) { width: 21%; }
+.wheel-reward-table th:nth-child(4) { width: 16%; }
+.wheel-reward-table td { height: 74px; padding: 15px 26px; border-bottom: 1px solid rgba(255,255,255,.065); color: #d7c9c6; font-size: 12px; vertical-align: middle; }
 .wheel-reward-table tbody tr:last-child td { border-bottom: 0; }
 .wheel-reward-table tbody tr { transition: background .2s ease; }
 .wheel-reward-table tbody tr:hover { background: rgba(255,255,255,.035); }
-.wheel-reward-user { display: flex; align-items: center; gap: 11px; min-width: 0; }
-.wheel-reward-user strong { overflow: hidden; color: #f7f1ed; font-size: 12px; font-weight: 600; text-overflow: ellipsis; }
+.wheel-reward-table th + th,.wheel-reward-table td + td { border-left: 1px solid rgba(255,255,255,.035); }
+.wheel-reward-user { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.wheel-reward-user strong { min-width: 0; overflow: hidden; color: #f7f1ed; font-size: 12px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .wheel-reward-avatar { display: grid; flex: 0 0 34px; width: 34px; height: 34px; place-items: center; border: 1px solid rgba(232,40,57,.32); border-radius: 50%; background: rgba(190,16,36,.14); color: #ff929a; font: 500 14px Georgia,serif; }
 .wheel-guest-badge,.wheel-user-badge { flex: 0 0 auto; padding: 5px 8px; border: 1px solid rgba(255,255,255,.12); border-radius: 999px; color: #baa9a6; font-size: 8px; line-height: 1; letter-spacing: .04em; }
 .wheel-user-badge { border-color: rgba(120,185,255,.2); background: rgba(60,120,190,.08); color: #a9c9eb; }
@@ -458,6 +459,7 @@ h1,h2,p { margin-top: 0; }
   .wheel-reward-table .wheel-reward-time { justify-items: start; }
   .wheel-reward-table td:last-child { justify-items: end; align-content: start; }
   .wheel-reward-table td:last-child::before { align-self: end; }
+  .wheel-reward-table th + th,.wheel-reward-table td + td { border-left: 0; }
 }
 @media (max-width: 400px) {
   .wheel-reward-table tbody tr { gap: 0 10px; padding: 13px; }
