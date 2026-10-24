@@ -457,6 +457,18 @@ def order_create(request):
                     if eligible:
                         unit_price, discounted_code = max(eligible)
                         discount_amount = unit_price * reward.discount_percent // 100
+                if reward and discounted_code:
+                    # Starting a fresh checkout transfers the still-unconfirmed reward
+                    # away from any abandoned payment page for this user.
+                    Order.objects.filter(
+                        user=request.user,
+                        wheel_reward=reward,
+                        status__in=(Order.Status.AWAITING_PAYMENT, Order.Status.REJECTED),
+                    ).update(
+                        status=Order.Status.CANCELED,
+                        reviewed_at=timezone.now(),
+                        review_note="Оформление продолжено в новом заказе.",
+                    )
                 order = Order.objects.create(
                     user=request.user,
                     concert=concert,
@@ -476,9 +488,6 @@ def order_create(request):
                             unit_price=ticket_type.price,
                             discount_amount=discount_amount if code == discounted_code else 0,
                         )
-                if reward and discounted_code:
-                    reward.claimed_at = timezone.now()
-                    reward.save(update_fields=("claimed_at",))
             target = reverse("order-payment", kwargs={"reference": order.reference})
             if _is_async(request):
                 html = render_to_string(
@@ -581,27 +590,36 @@ def order_payment(request, reference):
                 if order.status not in (Order.Status.AWAITING_PAYMENT, Order.Status.REJECTED):
                     form.add_error(None, "Заказ уже отправлен на проверку или закрыт.")
                 else:
-                    upload = form.cleaned_data.get("proof")
-                    card = form.cleaned_data["payment_card"]
-                    proof = PaymentProof.objects.create(
-                        order=order,
-                        payment_card=card,
-                        file=upload if upload else None,
-                        original_name=Path(upload.name).name[:255] if upload else "",
-                    )
-                    now = timezone.now()
-                    order.status = Order.Status.UNDER_REVIEW
-                    order.proof_submitted_at = now
-                    order.review_deadline = now + timedelta(minutes=15)
-                    order.reviewed_at = None
-                    order.reviewed_by = None
-                    order.review_note = ""
-                    order.save(update_fields=(
-                        "status", "proof_submitted_at", "review_deadline", "reviewed_at", "reviewed_by", "review_note"
-                    ))
-                    transaction.on_commit(
-                        lambda order_id=order.pk, proof_id=proof.pk: notify_order_for_review(order_id, proof_id)
-                    )
+                    reward = None
+                    if order.wheel_reward_id:
+                        reward = WheelReward.objects.select_for_update().get(pk=order.wheel_reward_id)
+                        if reward.claimed_at:
+                            form.add_error(None, "Эта скидка уже использована в другом заказе.")
+                    if not form.errors:
+                        upload = form.cleaned_data.get("proof")
+                        card = form.cleaned_data["payment_card"]
+                        proof = PaymentProof.objects.create(
+                            order=order,
+                            payment_card=card,
+                            file=upload if upload else None,
+                            original_name=Path(upload.name).name[:255] if upload else "",
+                        )
+                        now = timezone.now()
+                        if reward:
+                            reward.claimed_at = now
+                            reward.save(update_fields=("claimed_at",))
+                        order.status = Order.Status.UNDER_REVIEW
+                        order.proof_submitted_at = now
+                        order.review_deadline = now + timedelta(minutes=15)
+                        order.reviewed_at = None
+                        order.reviewed_by = None
+                        order.review_note = ""
+                        order.save(update_fields=(
+                            "status", "proof_submitted_at", "review_deadline", "reviewed_at", "reviewed_by", "review_note"
+                        ))
+                        transaction.on_commit(
+                            lambda order_id=order.pk, proof_id=proof.pk: notify_order_for_review(order_id, proof_id)
+                        )
 
             if not form.errors:
                 target = reverse("order-detail", kwargs={"reference": order.reference})

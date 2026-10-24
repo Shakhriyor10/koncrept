@@ -2,7 +2,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
-from .models import Order, Ticket
+from .models import Order, Ticket, WheelReward
 
 
 def _ensure_order_tickets(order):
@@ -36,6 +36,11 @@ def approve_order(order_id, reviewer):
             _ensure_order_tickets(order)
             order.status = Order.Status.APPROVED
             order.reviewed_at = timezone.now()
+            if order.wheel_reward_id:
+                reward = WheelReward.objects.select_for_update().get(pk=order.wheel_reward_id)
+                if reward.claimed_at is None:
+                    reward.claimed_at = order.reviewed_at
+                    reward.save(update_fields=("claimed_at",))
             order.reviewed_by = reviewer
             order.review_note = ""
             order.save(update_fields=("status", "reviewed_at", "reviewed_by", "review_note"))
@@ -53,6 +58,15 @@ def reject_order(order_id, reviewer, note=""):
             order.reviewed_by = reviewer
             order.review_note = note.strip() or "Не удалось подтвердить перевод. Проверьте чек и отправьте его ещё раз."
             order.save(update_fields=("status", "reviewed_at", "reviewed_by", "review_note"))
+            if order.wheel_reward_id:
+                reward = WheelReward.objects.select_for_update().get(pk=order.wheel_reward_id)
+                another_reserved_order = Order.objects.filter(
+                    wheel_reward=reward,
+                    status__in=(Order.Status.UNDER_REVIEW, Order.Status.EXPIRED, Order.Status.APPROVED),
+                ).exclude(pk=order.pk).exists()
+                if reward.claimed_at and not another_reserved_order:
+                    reward.claimed_at = None
+                    reward.save(update_fields=("claimed_at",))
     return order
 
 
