@@ -17,7 +17,7 @@
             <tr>
               <td class="wheel-reward-user-cell" data-label="Пользователь">
                 <div class="wheel-reward-user">
-                  {% if reward.user_id %}<strong>{{ reward.customer_label }}</strong><span class="wheel-user-badge">Аккаунт</span>{% else %}<span class="wheel-guest-badge">Гость</span>{% endif %}
+                  {% if reward.user_id %}<strong>{{ reward.customer_label }}</strong><span class="wheel-user-kind">Пользователь</span>{% else %}<strong>Гость</strong><span class="wheel-user-kind">Без регистрации</span>{% endif %}
                 </div>
               </td>
               <td class="wheel-reward-prize" data-label="Выигрыш"><span>{{ reward.get_code_display }}</span></td>
