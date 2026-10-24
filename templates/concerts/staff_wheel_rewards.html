@@ -11,14 +11,14 @@
   {% if page_obj.object_list %}
     <div class="wheel-reward-table-wrap">
       <table class="wheel-reward-table">
-        <thead><tr><th scope="col">Пользователь</th><th scope="col">Выигрыш</th><th scope="col">Время вращения</th><th scope="col">Статус</th></tr></thead>
+        <thead><tr><th scope="col">Пользователь</th><th scope="col">Выигрыш</th><th scope="col">Дата и время</th><th scope="col">Статус</th></tr></thead>
         <tbody>
           {% for reward in page_obj %}
             <tr>
-              <td><strong>{{ reward.customer_label }}</strong>{% if not reward.user_id %}<span class="wheel-guest-badge">Гость</span>{% endif %}</td>
-              <td class="wheel-reward-prize">{{ reward.get_code_display }}</td>
-              <td class="wheel-reward-time">{{ reward.spun_at|date:'d.m.Y H:i' }}</td>
-              <td><span class="wheel-reward-state {% if reward.claimed_at %}is-claimed{% elif reward.expires_at <= now %}is-expired{% endif %}">{{ reward.state_label }}</span></td>
+              <td class="wheel-reward-user" data-label="Пользователь"><span class="wheel-reward-avatar" aria-hidden="true">{% if reward.user_id %}П{% else %}Г{% endif %}</span><strong>{{ reward.customer_label }}</strong>{% if not reward.user_id %}<span class="wheel-guest-badge">Гость</span>{% else %}<span class="wheel-user-badge">Аккаунт</span>{% endif %}</td>
+              <td class="wheel-reward-prize" data-label="Выигрыш"><span>{{ reward.get_code_display }}</span></td>
+              <td class="wheel-reward-time" data-label="Дата и время"><span>{{ reward.spun_at|date:'d.m.Y' }}</span><small>{{ reward.spun_at|date:'H:i' }}</small></td>
+              <td data-label="Статус"><span class="wheel-reward-state {% if reward.claimed_at %}is-claimed{% elif reward.expires_at <= now %}is-expired{% endif %}">{{ reward.state_label }}</span></td>
             </tr>
           {% endfor %}
         </tbody>

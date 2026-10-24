@@ -420,21 +420,52 @@ h1,h2,p { margin-top: 0; }
 
 .staff-heading-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 17px; }
 .staff-heading-actions .button { min-height: 44px; }
-.wheel-reward-table-wrap { margin-top: 28px; overflow-x: auto; border: 1px solid var(--line); background: rgba(255,255,255,.025); }
-.wheel-reward-table { width: 100%; min-width: 680px; border-collapse: collapse; text-align: left; }
-.wheel-reward-table th { padding: 14px 18px; border-bottom: 1px solid var(--line); color: var(--soft); font-size: 8px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; }
-.wheel-reward-table td { padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,.07); color: var(--muted); font-size: 12px; vertical-align: middle; }
+.wheel-reward-table-wrap { margin-top: 26px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; background: linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018)); box-shadow: 0 18px 48px rgba(0,0,0,.16); }
+.wheel-reward-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; text-align: left; }
+.wheel-reward-table th { height: 50px; padding: 0 20px; border-bottom: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.025); color: #a99592; font-size: 9px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; }
+.wheel-reward-table th:nth-child(1) { width: 38%; }
+.wheel-reward-table th:nth-child(2) { width: 25%; }
+.wheel-reward-table th:nth-child(3) { width: 20%; }
+.wheel-reward-table th:nth-child(4) { width: 17%; }
+.wheel-reward-table td { height: 74px; padding: 13px 20px; border-bottom: 1px solid rgba(255,255,255,.065); color: #d7c9c6; font-size: 12px; vertical-align: middle; }
 .wheel-reward-table tbody tr:last-child td { border-bottom: 0; }
-.wheel-reward-table tbody tr { transition: background .18s ease; }
+.wheel-reward-table tbody tr { transition: background .2s ease; }
 .wheel-reward-table tbody tr:hover { background: rgba(255,255,255,.035); }
-.wheel-reward-table td:first-child { color: var(--text); }
-.wheel-reward-table td:first-child strong { display: inline-block; overflow-wrap: anywhere; }
-.wheel-reward-table .wheel-reward-prize { color: #ffe2a0; font-weight: 600; }
+.wheel-reward-user { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.wheel-reward-user strong { overflow: hidden; color: #f7f1ed; font-size: 12px; font-weight: 600; text-overflow: ellipsis; }
+.wheel-reward-avatar { display: grid; flex: 0 0 34px; width: 34px; height: 34px; place-items: center; border: 1px solid rgba(232,40,57,.32); border-radius: 50%; background: rgba(190,16,36,.14); color: #ff929a; font: 500 14px Georgia,serif; }
+.wheel-guest-badge,.wheel-user-badge { flex: 0 0 auto; padding: 5px 8px; border: 1px solid rgba(255,255,255,.12); border-radius: 999px; color: #baa9a6; font-size: 8px; line-height: 1; letter-spacing: .04em; }
+.wheel-user-badge { border-color: rgba(120,185,255,.2); background: rgba(60,120,190,.08); color: #a9c9eb; }
+.wheel-reward-prize span { display: inline-flex; align-items: center; min-height: 30px; padding: 6px 10px; border: 1px solid rgba(226,191,114,.22); border-radius: 7px; background: rgba(226,191,114,.07); color: #ffe2a0; font-size: 11px; font-weight: 600; line-height: 1.35; }
 .wheel-reward-time { white-space: nowrap; }
-.wheel-guest-badge { display: inline-block; margin-left: 8px; padding: 4px 7px; border: 1px solid var(--line); border-radius: 999px; color: var(--soft); font-size: 8px; line-height: 1; text-transform: uppercase; vertical-align: middle; }
-.wheel-reward-state { display: inline-block; padding: 6px 9px; border: 1px solid rgba(255,255,255,.12); border-radius: 999px; color: var(--muted); font-size: 10px; white-space: nowrap; }
-.wheel-reward-state.is-claimed { border-color: rgba(148,214,175,.25); background: rgba(148,214,175,.08); color: #94d6af; }
-.wheel-reward-state.is-expired { color: var(--soft); }
+.wheel-reward-time span,.wheel-reward-time small { display: block; }
+.wheel-reward-time small { margin-top: 3px; color: #9b8986; font-size: 10px; }
+.wheel-reward-state { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 5px 9px; border: 1px solid rgba(255,255,255,.12); border-radius: 999px; color: #d0bfbc; font-size: 10px; white-space: nowrap; }
+.wheel-reward-state::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ""; }
+.wheel-reward-state.is-claimed { border-color: rgba(148,214,175,.2); background: rgba(148,214,175,.07); color: #94d6af; }
+.wheel-reward-state.is-expired { color: #968784; }
+@media (max-width: 760px) {
+  .wheel-reward-table-wrap { overflow: visible; border: 0; background: transparent; box-shadow: none; }
+  .wheel-reward-table,.wheel-reward-table tbody { display: block; width: 100%; }
+  .wheel-reward-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; clip-path: inset(50%); }
+  .wheel-reward-table tbody { display: grid; gap: 11px; }
+  .wheel-reward-table tbody tr { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 0 16px; padding: 15px; border: 1px solid rgba(255,255,255,.1); border-radius: 11px; background: linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018)); }
+  .wheel-reward-table tbody tr:hover { background: rgba(255,255,255,.055); }
+  .wheel-reward-table td { display: grid; height: auto; min-width: 0; padding: 10px 0 0; border: 0; }
+  .wheel-reward-table .wheel-reward-user { grid-column: 1 / -1; display: flex; padding: 0 0 12px; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .wheel-reward-table td:not(.wheel-reward-user)::before { margin-bottom: 7px; color: #907d7a; content: attr(data-label); font-size: 8px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+  .wheel-reward-table .wheel-reward-prize { justify-items: start; }
+  .wheel-reward-table .wheel-reward-time { justify-items: start; }
+  .wheel-reward-table td:last-child { justify-items: end; align-content: start; }
+  .wheel-reward-table td:last-child::before { align-self: end; }
+}
+@media (max-width: 400px) {
+  .wheel-reward-table tbody tr { gap: 0 10px; padding: 13px; }
+  .wheel-reward-table .wheel-reward-user { gap: 8px; }
+  .wheel-reward-user strong { max-width: 42vw; font-size: 11px; }
+  .wheel-reward-avatar { flex-basis: 30px; width: 30px; height: 30px; }
+  .wheel-guest-badge,.wheel-user-badge { padding: 4px 6px; font-size: 7px; }
+}
 .wheel-reward-pagination { display: flex; justify-content: center; align-items: center; gap: 18px; margin: 24px 0; color: var(--muted); font-size: 11px; }
 .wheel-reward-pagination .button { min-height: 40px; }
 @media (max-width: 420px) { .staff-heading-actions { flex-direction: column; align-items: stretch; } .wheel-reward-pagination { gap: 8px; font-size: 9px; } }
