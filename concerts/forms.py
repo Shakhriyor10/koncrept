@@ -75,7 +75,7 @@ class OrderCreateForm(forms.Form):
         super().__init__(*args, **kwargs)
         for code in self.coupon_groups:
             self.fields[f"discount_{code}"] = forms.MultipleChoiceField(
-                choices=discount_choices,
+                choices=[("", "Без скидки"), *discount_choices],
                 required=False,
                 widget=forms.CheckboxSelectMultiple,
             )
@@ -94,7 +94,7 @@ class OrderCreateForm(forms.Form):
         used_coupon_ids = set()
         for code, quantity_name in self.coupon_groups.items():
             field_name = f"discount_{code}"
-            selected = cleaned.get(field_name, [])
+            selected = [coupon_id for coupon_id in cleaned.get(field_name, []) if coupon_id]
             if len(selected) > cleaned.get(quantity_name, 0):
                 self.add_error(field_name, "На один билет можно применить только одну скидку.")
             duplicates = used_coupon_ids.intersection(selected)

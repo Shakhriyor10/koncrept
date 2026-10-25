@@ -484,3 +484,14 @@ h1,h2,p { margin-top: 0; }
 .wheel-profile-reward .eyebrow { margin-bottom: 0; font-size: 8px; }
 .wheel-checkout-reward small { display: block; }
 @media (max-width: 480px) { .coupon-selection { padding-inline: 11px; } .coupon-option { min-width: 92px; } .coupon-option span { padding: 8px 9px; } }
+
+.coupon-ticket-group { display: grid; gap: 10px; }
+.coupon-ticket-list { display: grid; gap: 9px; }
+.coupon-ticket-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(150px, 220px); align-items: center; gap: 16px; padding: 12px 14px; border: 1px solid rgba(255,255,255,.1); border-radius: 9px; background: rgba(255,255,255,.025); }
+.coupon-ticket-row > span { display: grid; gap: 4px; }
+.coupon-ticket-row strong { color: #f3eee9; font-size: 13px; }
+.coupon-ticket-row small { color: var(--soft); font-size: 10px; }
+.coupon-ticket-row select { min-width: 0; width: 100%; padding: 10px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 7px; color: #f3eee9; background: #211b1a; font: inherit; font-size: 12px; }
+.coupon-ticket-row select:focus { outline: 2px solid rgba(226,191,114,.65); outline-offset: 2px; }
+.coupon-ticket-row option { color: #211b1a; background: #fff; }
+@media (max-width: 560px) { .coupon-ticket-row { grid-template-columns: 1fr; gap: 9px; padding: 11px; } }

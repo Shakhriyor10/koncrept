@@ -457,9 +457,9 @@ def order_create(request):
             form.add_error(None, "Один из выбранных типов билетов сейчас недоступен. Обновите страницу.")
         else:
             selected_ids = {
-                TicketType.Code.VIP: form.cleaned_data["discount_vip"],
-                TicketType.Code.STANDARD: form.cleaned_data["discount_standard"],
-                TicketType.Code.FAN_ZONE: form.cleaned_data["discount_fan_zone"],
+                TicketType.Code.VIP: [value for value in form.cleaned_data["discount_vip"] if value],
+                TicketType.Code.STANDARD: [value for value in form.cleaned_data["discount_standard"] if value],
+                TicketType.Code.FAN_ZONE: [value for value in form.cleaned_data["discount_fan_zone"] if value],
             }
             # Apply the only available coupon automatically when the customer
             # chooses a ticket but leaves the coupon checkbox untouched.
@@ -532,7 +532,7 @@ def order_create(request):
                 return redirect(target)
 
     coupon_selection = {
-        code: {int(value) for value in (form[f"discount_{code}"].value() or []) if str(value).isdigit()}
+        code: [str(value) for value in (form[f"discount_{code}"].value() or []) if str(value).isdigit()]
         for code in ("vip", "standard", "fan_zone")
     }
     context = {

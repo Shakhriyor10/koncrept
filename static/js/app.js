@@ -29,30 +29,45 @@
   function syncCouponPicker() {
     const groups = [...document.querySelectorAll("[data-coupon-group]")];
     const touchedInput = document.querySelector("[data-coupon-selection-touched]");
-    const couponInputs = new Map();
-    groups.forEach((group) => group.querySelectorAll("[data-coupon-id]").forEach((input) => {
-      couponInputs.set(input.dataset.couponId, input);
-    }));
-    if (couponInputs.size === 1 && !touchedInput?.value && !document.querySelector("[data-coupon-id]:checked")) {
-      const couponId = couponInputs.keys().next().value;
-      const eligibleGroup = groups.find((group) => {
-        const quantityInput = document.getElementById(group.dataset.quantityInput);
-        return Number.parseInt(quantityInput?.value || "0", 10) > 0;
-      });
-      const coupon = eligibleGroup?.querySelector(`[data-coupon-id="${couponId}"]`);
-      if (coupon) coupon.checked = true;
-    }
-    const selected = new Map();
-    groups.forEach((group) => {
-      group.querySelectorAll("[data-coupon-id]:checked").forEach((input) => selected.set(input.dataset.couponId, group));
-    });
+
     groups.forEach((group) => {
       const quantityInput = document.getElementById(group.dataset.quantityInput);
-      const quantity = Math.max(0, Number.parseInt(quantityInput?.value || "0", 10) || 0);
-      const chosenCount = group.querySelectorAll("[data-coupon-id]:checked").length;
-      group.querySelectorAll("[data-coupon-id]").forEach((input) => {
-        const chosenInOtherGroup = selected.has(input.dataset.couponId) && selected.get(input.dataset.couponId) !== group;
-        input.disabled = !input.checked && (quantity === 0 || chosenCount >= quantity || chosenInOtherGroup);
+      const quantity = Math.min(20, Math.max(0, Number.parseInt(quantityInput?.value || "0", 10) || 0));
+      const list = group.querySelector("[data-coupon-ticket-list]");
+      const template = group.querySelector("[data-coupon-ticket-template]");
+      if (!list || !template) return;
+      if (group.dataset.renderedQuantity === String(quantity)) return;
+
+      const oldValues = [...list.querySelectorAll("[data-coupon-select]")].map((select) => select.value);
+      const initialValues = (template.dataset.initialSelection || "").split(",").filter(Boolean);
+      list.replaceChildren();
+      for (let index = 0; index < quantity; index += 1) {
+        const row = template.content.firstElementChild.cloneNode(true);
+        const label = row.querySelector("[data-coupon-ticket-label]");
+        const select = row.querySelector("[data-coupon-select]");
+        if (label) label.textContent = `${group.dataset.ticketLabel} · билет ${index + 1}`;
+        select.value = oldValues[index] || initialValues[index] || "";
+        list.append(row);
+      }
+      group.dataset.renderedQuantity = String(quantity);
+    });
+
+    const selects = [...document.querySelectorAll("[data-coupon-select]")];
+    const couponIds = new Set();
+    groups.forEach((group) => group.querySelector("[data-coupon-ticket-template]")?.content.querySelectorAll("option").forEach((option) => {
+      if (option.value) couponIds.add(option.value);
+    }));
+    if (couponIds.size === 1 && !touchedInput?.value && !selects.some((select) => select.value)) {
+      const onlyCoupon = couponIds.values().next().value;
+      const firstTicket = selects[0];
+      if (firstTicket) firstTicket.value = onlyCoupon;
+    }
+
+    const selected = new Map();
+    selects.forEach((select) => { if (select.value) selected.set(select.value, select); });
+    selects.forEach((select) => {
+      [...select.options].forEach((option) => {
+        option.disabled = Boolean(option.value && selected.has(option.value) && selected.get(option.value) !== select);
       });
     });
   }
@@ -66,13 +81,12 @@
     }));
     const gross = quantities.reduce((sum, item) => sum + item.quantity * item.price, 0);
     syncCouponPicker();
-    const discount = [...document.querySelectorAll("[data-coupon-group]")].reduce((sum, group) => {
-      const quantityInput = document.getElementById(group.dataset.quantityInput);
-      const quantity = Math.max(0, Number.parseInt(quantityInput?.value || "0", 10) || 0);
+    const discount = [...document.querySelectorAll("[data-coupon-select]")].reduce((sum, select) => {
+      if (!select.value) return sum;
+      const quantityInput = document.getElementById(select.closest("[data-coupon-group]")?.dataset.quantityInput);
       const price = Number(quantityInput?.dataset.price || 0);
-      return sum + [...group.querySelectorAll("[data-coupon-id]:checked")]
-        .slice(0, quantity)
-        .reduce((ticketSum, coupon) => ticketSum + Math.floor(price * Number(coupon.dataset.discountPercent || 0) / 100), 0);
+      const percent = Number(select.selectedOptions[0]?.dataset.discountPercent || 0);
+      return sum + Math.floor(price * percent / 100);
     }, 0);
     const total = Math.max(0, gross - discount);
     const output = document.querySelector("#order-total-preview");
@@ -306,7 +320,7 @@
       const file = document.querySelector("#proof-file");
       if (file) updateProofSelection(file);
     }
-    if (event.target.matches("[data-coupon-id]")) {
+    if (event.target.matches("[data-coupon-select]")) {
       const touchedInput = document.querySelector("[data-coupon-selection-touched]");
       if (touchedInput) touchedInput.value = "1";
       updateTotal();
