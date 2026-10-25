@@ -28,6 +28,20 @@
 
   function syncCouponPicker() {
     const groups = [...document.querySelectorAll("[data-coupon-group]")];
+    const touchedInput = document.querySelector("[data-coupon-selection-touched]");
+    const couponInputs = new Map();
+    groups.forEach((group) => group.querySelectorAll("[data-coupon-id]").forEach((input) => {
+      couponInputs.set(input.dataset.couponId, input);
+    }));
+    if (couponInputs.size === 1 && !touchedInput?.value && !document.querySelector("[data-coupon-id]:checked")) {
+      const couponId = couponInputs.keys().next().value;
+      const eligibleGroup = groups.find((group) => {
+        const quantityInput = document.getElementById(group.dataset.quantityInput);
+        return Number.parseInt(quantityInput?.value || "0", 10) > 0;
+      });
+      const coupon = eligibleGroup?.querySelector(`[data-coupon-id="${couponId}"]`);
+      if (coupon) coupon.checked = true;
+    }
     const selected = new Map();
     groups.forEach((group) => {
       group.querySelectorAll("[data-coupon-id]:checked").forEach((input) => selected.set(input.dataset.couponId, group));
@@ -292,7 +306,11 @@
       const file = document.querySelector("#proof-file");
       if (file) updateProofSelection(file);
     }
-    if (event.target.matches("[data-coupon-id]")) updateTotal();
+    if (event.target.matches("[data-coupon-id]")) {
+      const touchedInput = document.querySelector("[data-coupon-selection-touched]");
+      if (touchedInput) touchedInput.value = "1";
+      updateTotal();
+    }
   });
 
   document.addEventListener("click", async (event) => {

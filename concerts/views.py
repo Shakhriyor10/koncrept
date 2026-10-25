@@ -461,6 +461,13 @@ def order_create(request):
                 TicketType.Code.STANDARD: form.cleaned_data["discount_standard"],
                 TicketType.Code.FAN_ZONE: form.cleaned_data["discount_fan_zone"],
             }
+            # Apply the only available coupon automatically when the customer
+            # chooses a ticket but leaves the coupon checkbox untouched.
+            if len(available_discounts) == 1 and not any(selected_ids.values()) and request.POST.get("coupon_selection_touched") != "1":
+                for code, quantity in quantities.items():
+                    if quantity:
+                        selected_ids[code] = [str(available_discounts[0].pk)]
+                        break
             selected_coupon_ids = {coupon_id for ids in selected_ids.values() for coupon_id in ids}
             order = None
             with transaction.atomic():
@@ -535,6 +542,7 @@ def order_create(request):
         "profile": profile,
         "available_discounts": available_discounts,
         "coupon_selection": coupon_selection,
+        "coupon_selection_touched": request.POST.get("coupon_selection_touched") == "1",
     }
     if _is_async(request):
         html = render_to_string("concerts/checkout_start.html", context, request)

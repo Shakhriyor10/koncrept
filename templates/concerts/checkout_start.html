@@ -4,8 +4,9 @@
   <p class="muted">{{ concert.artist_name }} · {{ concert.event_date|date:'d.m.Y' }} · {{ concert.venue }}</p>
   <form method="post" action="{% url 'order-create' %}" data-async-form data-fragment="#checkout-flow" class="stack-form checkout-form">
     {% csrf_token %}
+    <input type="hidden" name="coupon_selection_touched" value="{% if coupon_selection_touched %}1{% endif %}" data-coupon-selection-touched>
     {% if form.non_field_errors %}<div class="form-error">{{ form.non_field_errors }}</div>{% endif %}
-    {% if available_discounts %}<div class="coupon-intro"><strong>Ваши скидки · {{ available_discounts|length }}</strong><span>Выберите не больше одной скидки на каждый билет. Скидки не складываются.</span></div>{% endif %}
+    {% if available_discounts %}<div class="coupon-intro"><strong>Ваши скидки · {{ available_discounts|length }}</strong><span>{% if available_discounts|length == 1 %}Единственная скидка автоматически применится к первому выбранному билету. При желании можно переназначить её.{% else %}Выберите не больше одной скидки на каждый билет. Скидки не складываются.{% endif %}</span></div>{% endif %}
     <div class="quantity-list">
       {% if ticket_types.vip %}
         <label class="quantity-row"><span><strong>{{ ticket_types.vip.title }}</strong><small>{{ ticket_types.vip.price|money }} сум за билет</small></span><input class="quantity-input" data-price="{{ ticket_types.vip.price }}" type="number" name="quantity_vip" value="{{ form.quantity_vip.value|default:0 }}" min="0" max="20" id="id_quantity_vip">{% for error in form.quantity_vip.errors %}<small class="field-error">{{ error }}</small>{% endfor %}</label>
