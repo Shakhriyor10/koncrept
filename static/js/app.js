@@ -57,10 +57,16 @@
     groups.forEach((group) => group.querySelector("[data-coupon-ticket-template]")?.content.querySelectorAll("option").forEach((option) => {
       if (option.value) couponIds.add(option.value);
     }));
-    if (couponIds.size === 1 && !touchedInput?.value && !selects.some((select) => select.value)) {
-      const onlyCoupon = couponIds.values().next().value;
-      const firstTicket = selects[0];
-      if (firstTicket) firstTicket.value = onlyCoupon;
+    if (!touchedInput?.value) {
+      const remainingCoupons = [...couponIds];
+      selects.forEach((select) => {
+        if (!select.value) return;
+        const usedIndex = remainingCoupons.indexOf(select.value);
+        if (usedIndex >= 0) remainingCoupons.splice(usedIndex, 1);
+      });
+      selects.forEach((select) => {
+        if (!select.value && remainingCoupons.length) select.value = remainingCoupons.shift();
+      });
     }
 
     const selected = new Map();

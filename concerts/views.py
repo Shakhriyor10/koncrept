@@ -461,13 +461,18 @@ def order_create(request):
                 TicketType.Code.STANDARD: [value for value in form.cleaned_data["discount_standard"] if value],
                 TicketType.Code.FAN_ZONE: [value for value in form.cleaned_data["discount_fan_zone"] if value],
             }
-            # Apply the only available coupon automatically when the customer
-            # chooses a ticket but leaves the coupon checkbox untouched.
-            if len(available_discounts) == 1 and not any(selected_ids.values()) and request.POST.get("coupon_selection_touched") != "1":
+            # Automatically assign available coupons to selected ticket slots
+            # unless the customer has edited the per-ticket selectors.
+            if not any(selected_ids.values()) and request.POST.get("coupon_selection_touched") != "1":
+                remaining_coupons = iter(available_discounts)
                 for code, quantity in quantities.items():
-                    if quantity:
-                        selected_ids[code] = [str(available_discounts[0].pk)]
-                        break
+                    assigned = []
+                    for _ in range(quantity):
+                        reward = next(remaining_coupons, None)
+                        if reward is None:
+                            break
+                        assigned.append(str(reward.pk))
+                    selected_ids[code] = assigned
             selected_coupon_ids = {coupon_id for ids in selected_ids.values() for coupon_id in ids}
             order = None
             with transaction.atomic():
