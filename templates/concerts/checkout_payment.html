@@ -3,7 +3,7 @@
   <p class="eyebrow">Шаг 02 · Перевод</p><h1 class="page-title">Оплата заказа</h1>
   <p class="muted">Заказ <strong>{{ order.reference }}</strong> · {{ order.ticket_count }} билет(а/ов)</p>
   {% if order.status == 'rejected' %}<div class="notice notice-error"><strong>Чек не подтверждён</strong><span>{{ order.review_note }}</span></div>{% endif %}
-  {% if order.wheel_reward %}<div class="wheel-checkout-reward"><span>{{ order.wheel_reward.get_code_display }}</span><small>Скидка применена к одному билету{% if order.discount_amount %}: −{{ order.discount_amount|money }} сум{% endif %}.</small></div>{% endif %}
+  {% if order.discount_allocations.all %}<div class="wheel-checkout-reward"><span>Скидки на выбранные билеты</span>{% for allocation in order.discount_allocations.all %}<small>{{ allocation.reward.get_code_display }} → {{ allocation.order_item.ticket_type.title }}, билет {{ allocation.unit_number }} · −{{ allocation.discount_amount|money }} сум</small>{% endfor %}</div>{% elif order.wheel_reward %}<div class="wheel-checkout-reward"><span>{{ order.wheel_reward.get_code_display }}</span><small>Скидка применена к одному билету{% if order.discount_amount %}: −{{ order.discount_amount|money }} сум{% endif %}.</small></div>{% endif %}
   <div class="order-summary">
     {% if order.discount_amount %}<div class="order-summary-original"><span>Стоимость без скидки</span><strong>{{ order.gross_amount|money }} сум</strong></div>{% endif %}
     {% for item in order.items.all %}<div><span>{{ item.ticket_type.title }} × {{ item.quantity }}</span><strong>{{ item.total|money }} сум</strong></div>{% endfor %}

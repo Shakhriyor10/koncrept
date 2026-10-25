@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from .models import Order, Ticket, WheelReward
@@ -36,8 +37,11 @@ def approve_order(order_id, reviewer):
             _ensure_order_tickets(order)
             order.status = Order.Status.APPROVED
             order.reviewed_at = timezone.now()
+            reward_ids = set(order.discount_allocations.values_list("reward_id", flat=True))
             if order.wheel_reward_id:
-                reward = WheelReward.objects.select_for_update().get(pk=order.wheel_reward_id)
+                reward_ids.add(order.wheel_reward_id)
+            rewards = WheelReward.objects.select_for_update().filter(pk__in=reward_ids)
+            for reward in rewards:
                 if reward.claimed_at is None:
                     reward.claimed_at = order.reviewed_at
                     reward.save(update_fields=("claimed_at",))
@@ -58,11 +62,15 @@ def reject_order(order_id, reviewer, note=""):
             order.reviewed_by = reviewer
             order.review_note = note.strip() or "Не удалось подтвердить перевод. Проверьте чек и отправьте его ещё раз."
             order.save(update_fields=("status", "reviewed_at", "reviewed_by", "review_note"))
+            reward_ids = set(order.discount_allocations.values_list("reward_id", flat=True))
             if order.wheel_reward_id:
-                reward = WheelReward.objects.select_for_update().get(pk=order.wheel_reward_id)
+                reward_ids.add(order.wheel_reward_id)
+            reserved_statuses = (Order.Status.UNDER_REVIEW, Order.Status.EXPIRED, Order.Status.APPROVED)
+            rewards = WheelReward.objects.select_for_update().filter(pk__in=reward_ids)
+            for reward in rewards:
                 another_reserved_order = Order.objects.filter(
-                    wheel_reward=reward,
-                    status__in=(Order.Status.UNDER_REVIEW, Order.Status.EXPIRED, Order.Status.APPROVED),
+                    Q(wheel_reward=reward) | Q(discount_allocations__reward=reward),
+                    status__in=reserved_statuses,
                 ).exclude(pk=order.pk).exists()
                 if reward.claimed_at and not another_reserved_order:
                     reward.claimed_at = None

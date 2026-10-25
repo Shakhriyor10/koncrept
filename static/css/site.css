@@ -461,3 +461,26 @@ h1,h2,p { margin-top: 0; }
 .wheel-reward-pagination { display: flex; justify-content: center; align-items: center; gap: 18px; margin: 24px 0; color: var(--muted); font-size: 11px; }
 .wheel-reward-pagination .button { min-height: 40px; }
 @media (max-width: 420px) { .staff-heading-actions { flex-direction: column; align-items: stretch; } .wheel-reward-pagination { gap: 8px; font-size: 9px; } }
+
+
+/* Multi-coupon selection */
+.coupon-intro { display: grid; gap: 5px; padding: 15px 17px; border: 1px solid rgba(226,191,114,.25); border-radius: 8px; background: rgba(226,191,114,.055); }
+.coupon-intro strong { color: #ffe2a0; font-size: 13px; }
+.coupon-intro span { color: var(--muted); font-size: 11px; line-height: 1.5; }
+.coupon-selection { min-width: 0; margin: -2px 0 15px; padding: 14px 15px 15px; border: 1px solid rgba(255,255,255,.1); border-radius: 9px; }
+.coupon-selection legend { padding: 0 7px; color: #d9c8c3; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.coupon-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.coupon-option { position: relative; display: inline-flex; min-width: 108px; cursor: pointer; }
+.coupon-option input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.coupon-option span { display: grid; gap: 4px; width: 100%; padding: 9px 12px; border: 1px solid rgba(255,255,255,.12); border-radius: 7px; background: rgba(255,255,255,.025); transition: border-color .16s,background .16s,opacity .16s; }
+.coupon-option strong { color: #e8d6a8; font-size: 12px; }
+.coupon-option small { color: var(--soft); font-size: 9px; }
+.coupon-option input:checked + span { border-color: rgba(226,191,114,.65); background: rgba(226,191,114,.13); box-shadow: inset 0 0 0 1px rgba(226,191,114,.12); }
+.coupon-option input:focus-visible + span { outline: 2px solid #ffe2a0; outline-offset: 2px; }
+.coupon-option input:disabled + span { opacity: .38; cursor: not-allowed; }
+.wheel-profile-rewards { display: grid; gap: 12px; margin: 0 0 25px; }
+.wheel-profile-reward-list { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,250px),1fr)); gap: 10px; }
+.wheel-profile-reward { margin: 0; }
+.wheel-profile-reward .eyebrow { margin-bottom: 0; font-size: 8px; }
+.wheel-checkout-reward small { display: block; }
+@media (max-width: 480px) { .coupon-selection { padding-inline: 11px; } .coupon-option { min-width: 92px; } .coupon-option span { padding: 8px 9px; } }

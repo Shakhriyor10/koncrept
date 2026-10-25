@@ -77,7 +77,19 @@ def _order_message(order, proof):
     lines.extend((
         f"Количество билетов: {order.ticket_count}",
     ))
-    if order.wheel_reward_id:
+    allocations = list(order.discount_allocations.select_related("reward", "order_item__ticket_type"))
+    if allocations:
+        lines.append("Скидки по билетам:")
+        for allocation in allocations:
+            lines.append(
+                f"• {allocation.order_item.ticket_type.title} #{allocation.unit_number}: "
+                f"{allocation.reward.get_code_display()} (−{allocation.discount_amount:,} сум)".replace(",", " ")
+            )
+        lines.extend((
+            f"Стоимость до скидок: {order.gross_amount:,} сум".replace(",", " "),
+            f"Общая скидка: −{order.discount_amount:,} сум".replace(",", " "),
+        ))
+    elif order.wheel_reward_id:
         lines.extend((
             f"Приз барабана: {order.wheel_reward.get_code_display()}",
             f"Стоимость до скидки: {order.gross_amount:,} сум".replace(",", " "),

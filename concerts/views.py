@@ -13,7 +13,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.core.paginator import Paginator
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -35,6 +35,7 @@ from .models import (
     CustomerProfile,
     Order,
     OrderItem,
+    OrderDiscount,
     PaymentCard,
     PaymentProof,
     Ticket,
@@ -47,7 +48,7 @@ from .services import approve_order, cancel_order, ensure_approved_order_tickets
 from .telegram_bot import handle_review_callback, notify_order_for_review, verify_webhook_secret
 from .ticket_urls import ticket_verification_url
 from .wheel import (
-    active_discount_for_user,
+    active_discounts_for_user,
     attach_guest_reward,
     get_guest_reward_status,
     get_user_reward_status,
@@ -83,12 +84,14 @@ def home(request):
 
 
 def _attach_guest_prize(request, user):
-    reward, gift_order = attach_guest_reward(request, user)
-    if gift_order:
-        messages.success(request, f"Поздравляем! Подарочный билет добавлен в профиль. Заказ {gift_order.reference}.")
-    elif reward:
-        messages.success(request, f"Ваш приз «{reward.get_code_display()}» сохранён в профиле на оставшееся время действия.")
-    return reward
+    rewards, gift_orders = attach_guest_reward(request, user)
+    if gift_orders:
+        refs = ", ".join(order.reference for order in gift_orders)
+        messages.success(request, f"Подарочные билеты добавлены в профиль: {refs}.")
+    discount_count = sum(reward.is_discount_coupon for reward in rewards)
+    if discount_count:
+        messages.success(request, f"Сохранено скидочных купонов: {discount_count}. Их можно распределить по билетам при оформлении.")
+    return rewards
 
 
 def register(request):
@@ -172,12 +175,15 @@ def dashboard(request):
     orders = request.user.concert_orders.select_related("concert").prefetch_related("items", "tickets")
     for order in orders:
         order.expire_if_due()
-    active_reward = WheelReward.objects.filter(
-        user=request.user,
-        claimed_at__isnull=True,
-        expires_at__gt=timezone.now(),
-    ).order_by("-spun_at").first()
-    return render(request, "concerts/dashboard.html", {"orders": orders, "active_reward": active_reward})
+    now = timezone.now()
+    active_rewards = WheelReward.objects.filter(user=request.user, claimed_at__isnull=True).filter(
+        Q(code__in=(
+            WheelReward.Code.DISCOUNT_5, WheelReward.Code.DISCOUNT_10, WheelReward.Code.DISCOUNT_20,
+            WheelReward.Code.DISCOUNT_25, WheelReward.Code.DISCOUNT_30, WheelReward.Code.DISCOUNT_50,
+            WheelReward.Code.DISCOUNT_60,
+        )) | Q(expires_at__gt=now)
+    ).order_by("-spun_at")
+    return render(request, "concerts/dashboard.html", {"orders": orders, "active_rewards": active_rewards})
 
 
 @login_required
@@ -431,7 +437,13 @@ def order_create(request):
         if _is_async(request):
             return JsonResponse({"redirect": target})
         return redirect(target)
-    form = OrderCreateForm(request.POST or None)
+
+    available_discounts = list(active_discounts_for_user(request.user))
+    discount_choices = [
+        (str(reward.pk), f"Скидка {reward.discount_percent}% · получена {reward.spun_at:%d.%m.%Y}")
+        for reward in available_discounts
+    ]
+    form = OrderCreateForm(request.POST or None, discount_choices=discount_choices)
     ticket_types = {item.code: item for item in concert.ticket_types.filter(active=True)}
 
     if request.method == "POST" and form.is_valid():
@@ -444,66 +456,85 @@ def order_create(request):
         if requested_missing:
             form.add_error(None, "Один из выбранных типов билетов сейчас недоступен. Обновите страницу.")
         else:
+            selected_ids = {
+                TicketType.Code.VIP: form.cleaned_data["discount_vip"],
+                TicketType.Code.STANDARD: form.cleaned_data["discount_standard"],
+                TicketType.Code.FAN_ZONE: form.cleaned_data["discount_fan_zone"],
+            }
+            selected_coupon_ids = {coupon_id for ids in selected_ids.values() for coupon_id in ids}
+            order = None
             with transaction.atomic():
-                reward = active_discount_for_user(request.user, lock=True)
-                discounted_code = None
-                discount_amount = 0
-                if reward:
-                    eligible = [
-                        (ticket_types[code].price, code)
-                        for code, quantity in quantities.items()
-                        if quantity and code in ticket_types
-                    ]
-                    if eligible:
-                        unit_price, discounted_code = max(eligible)
-                        discount_amount = unit_price * reward.discount_percent // 100
-                if reward and discounted_code:
-                    # Starting a fresh checkout transfers the still-unconfirmed reward
-                    # away from any abandoned payment page for this user.
-                    Order.objects.filter(
+                locked_discounts = list(active_discounts_for_user(request.user, lock=True))
+                discounts_by_id = {str(reward.pk): reward for reward in locked_discounts}
+                if not selected_coupon_ids.issubset(discounts_by_id):
+                    form.add_error(None, "Один из выбранных купонов уже использован или ожидает проверки. Обновите страницу.")
+                else:
+                    if selected_coupon_ids:
+                        Order.objects.filter(
+                            user=request.user,
+                            status__in=(Order.Status.AWAITING_PAYMENT, Order.Status.REJECTED),
+                        ).filter(
+                            Q(wheel_reward_id__in=selected_coupon_ids)
+                            | Q(discount_allocations__reward_id__in=selected_coupon_ids)
+                        ).update(
+                            status=Order.Status.CANCELED,
+                            reviewed_at=timezone.now(),
+                            review_note="Оформление продолжено в новом заказе.",
+                        )
+                    order = Order.objects.create(
                         user=request.user,
-                        wheel_reward=reward,
-                        status__in=(Order.Status.AWAITING_PAYMENT, Order.Status.REJECTED),
-                    ).update(
-                        status=Order.Status.CANCELED,
-                        reviewed_at=timezone.now(),
-                        review_note="Оформление продолжено в новом заказе.",
+                        concert=concert,
+                        first_name="",
+                        last_name="",
+                        phone=profile.phone.strip(),
+                        email="",
                     )
-                order = Order.objects.create(
-                    user=request.user,
-                    concert=concert,
-                    first_name="",
-                    last_name="",
-                    phone=profile.phone.strip(),
-                    email="",
-                    wheel_reward=reward if discounted_code else None,
-                )
-                for code, quantity in quantities.items():
-                    if quantity:
+                    for code, quantity in quantities.items():
+                        if not quantity:
+                            continue
                         ticket_type = ticket_types[code]
-                        OrderItem.objects.create(
+                        coupons = [discounts_by_id[coupon_id] for coupon_id in selected_ids[code]]
+                        unit_discounts = [ticket_type.price * coupon.discount_percent // 100 for coupon in coupons]
+                        order_item = OrderItem.objects.create(
                             order=order,
                             ticket_type=ticket_type,
                             quantity=quantity,
                             unit_price=ticket_type.price,
-                            discount_amount=discount_amount if code == discounted_code else 0,
+                            discount_amount=sum(unit_discounts),
                         )
-            target = reverse("order-payment", kwargs={"reference": order.reference})
-            if _is_async(request):
-                html = render_to_string(
-                    "concerts/checkout_payment.html",
-                    _payment_context(request, order),
-                    request,
-                )
-                return JsonResponse({"html": html, "url": target})
-            return redirect(target)
+                        OrderDiscount.objects.bulk_create([
+                            OrderDiscount(
+                                order=order,
+                                order_item=order_item,
+                                reward=coupon,
+                                unit_number=index,
+                                discount_amount=unit_discounts[index - 1],
+                            )
+                            for index, coupon in enumerate(coupons, start=1)
+                        ])
 
+            if not form.errors and order:
+                target = reverse("order-payment", kwargs={"reference": order.reference})
+                if _is_async(request):
+                    html = render_to_string(
+                        "concerts/checkout_payment.html",
+                        _payment_context(request, order),
+                        request,
+                    )
+                    return JsonResponse({"html": html, "url": target})
+                return redirect(target)
+
+    coupon_selection = {
+        code: {int(value) for value in (form[f"discount_{code}"].value() or []) if str(value).isdigit()}
+        for code in ("vip", "standard", "fan_zone")
+    }
     context = {
         "concert": concert,
         "ticket_types": ticket_types,
         "form": form,
         "profile": profile,
-        "available_reward": active_discount_for_user(request.user),
+        "available_discounts": available_discounts,
+        "coupon_selection": coupon_selection,
     }
     if _is_async(request):
         html = render_to_string("concerts/checkout_start.html", context, request)
@@ -513,7 +544,9 @@ def order_create(request):
 
 def _owned_order(request, reference):
     return get_object_or_404(
-        Order.objects.select_related("concert", "user").prefetch_related("items__ticket_type", "tickets__order_item__ticket_type"),
+        Order.objects.select_related("concert", "user").prefetch_related(
+            "items__ticket_type", "tickets__order_item__ticket_type", "discount_allocations__reward"
+        ),
         reference=reference,
         user=request.user,
     )
@@ -590,16 +623,21 @@ def order_payment(request, reference):
                 if order.status not in (Order.Status.AWAITING_PAYMENT, Order.Status.REJECTED):
                     form.add_error(None, "Заказ уже отправлен на проверку или закрыт.")
                 else:
-                    reward = None
+                    reward_ids = set(order.discount_allocations.values_list("reward_id", flat=True))
                     if order.wheel_reward_id:
-                        reward = WheelReward.objects.select_for_update().get(pk=order.wheel_reward_id)
+                        reward_ids.add(order.wheel_reward_id)
+                    rewards = WheelReward.objects.select_for_update().filter(pk__in=reward_ids)
+                    reserved_statuses = (Order.Status.UNDER_REVIEW, Order.Status.EXPIRED, Order.Status.APPROVED)
+                    for reward in rewards:
                         if reward.claimed_at:
-                            form.add_error(None, "Эта скидка уже использована в другом заказе.")
-                        elif Order.objects.filter(
-                            wheel_reward=reward,
-                            status__in=(Order.Status.UNDER_REVIEW, Order.Status.EXPIRED, Order.Status.APPROVED),
+                            form.add_error(None, "Один из купонов уже использован в другом заказе.")
+                            break
+                        if Order.objects.filter(
+                            Q(wheel_reward=reward) | Q(discount_allocations__reward=reward),
+                            status__in=reserved_statuses,
                         ).exclude(pk=order.pk).exists():
-                            form.add_error(None, "Эта скидка уже ожидает проверки в другом заказе.")
+                            form.add_error(None, "Один из купонов уже ожидает проверки в другом заказе.")
+                            break
                     if not form.errors:
                         upload = form.cleaned_data.get("proof")
                         card = form.cleaned_data["payment_card"]

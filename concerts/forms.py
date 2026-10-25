@@ -65,6 +65,21 @@ class OrderCreateForm(forms.Form):
     quantity_standard = forms.IntegerField(label="Стандарт", min_value=0, max_value=20, required=False, initial=0)
     quantity_fan_zone = forms.IntegerField(label="Фан-зона", min_value=0, max_value=20, required=False, initial=0)
 
+    coupon_groups = {
+        "vip": "quantity_vip",
+        "standard": "quantity_standard",
+        "fan_zone": "quantity_fan_zone",
+    }
+
+    def __init__(self, *args, discount_choices=(), **kwargs):
+        super().__init__(*args, **kwargs)
+        for code in self.coupon_groups:
+            self.fields[f"discount_{code}"] = forms.MultipleChoiceField(
+                choices=discount_choices,
+                required=False,
+                widget=forms.CheckboxSelectMultiple,
+            )
+
     def clean(self):
         cleaned = super().clean()
         quantity_names = ("quantity_vip", "quantity_standard", "quantity_fan_zone")
@@ -75,6 +90,17 @@ class OrderCreateForm(forms.Form):
             raise ValidationError("Выберите хотя бы один билет.")
         if sum(quantities) > 20:
             raise ValidationError("В одном заказе можно оформить не более 20 билетов.")
+
+        used_coupon_ids = set()
+        for code, quantity_name in self.coupon_groups.items():
+            field_name = f"discount_{code}"
+            selected = cleaned.get(field_name, [])
+            if len(selected) > cleaned.get(quantity_name, 0):
+                self.add_error(field_name, "На один билет можно применить только одну скидку.")
+            duplicates = used_coupon_ids.intersection(selected)
+            if duplicates:
+                self.add_error(field_name, "Одну скидку нельзя применить к нескольким билетам.")
+            used_coupon_ids.update(selected)
         return cleaned
 
 

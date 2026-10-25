@@ -145,12 +145,28 @@ class WheelReward(models.Model):
         return (profile.phone if profile else "") or self.user.get_username()
 
     @property
+    def is_discount_coupon(self):
+        return self.code in {
+            self.Code.DISCOUNT_5,
+            self.Code.DISCOUNT_10,
+            self.Code.DISCOUNT_20,
+            self.Code.DISCOUNT_25,
+            self.Code.DISCOUNT_30,
+            self.Code.DISCOUNT_50,
+            self.Code.DISCOUNT_60,
+        }
+
+    @property
     def state_label(self):
         if self.claimed_at:
             return "Использован / билет выдан"
-        if self.orders.filter(status__in=(Order.Status.UNDER_REVIEW, Order.Status.EXPIRED)).exists():
+        reserved_statuses = (Order.Status.UNDER_REVIEW, Order.Status.EXPIRED)
+        if (
+            self.orders.filter(status__in=reserved_statuses).exists()
+            or self.redemptions.filter(order__status__in=reserved_statuses).exists()
+        ):
             return "Оплата на проверке"
-        if self.expires_at <= timezone.now():
+        if not self.is_discount_coupon and self.expires_at <= timezone.now():
             return "Срок истёк"
         return "Активен"
 
@@ -252,6 +268,27 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.ticket_type.title} × {self.quantity}"
+
+
+class OrderDiscount(models.Model):
+    """One wheel coupon assigned to one individual ticket in an order."""
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="discount_allocations")
+    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, related_name="discount_allocations")
+    reward = models.ForeignKey(WheelReward, on_delete=models.PROTECT, related_name="redemptions")
+    unit_number = models.PositiveSmallIntegerField()
+    discount_amount = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ("order_item_id", "unit_number")
+        constraints = [
+            models.UniqueConstraint(fields=("order", "reward"), name="unique_order_wheel_reward_redemption"),
+            models.UniqueConstraint(fields=("order_item", "unit_number"), name="unique_order_ticket_discount"),
+        ]
+        verbose_name = "скидка на билет"
+        verbose_name_plural = "скидки на билеты"
+
+    def __str__(self):
+        return f"{self.reward.get_code_display()} · {self.order.reference}"
 
 
 class PaymentProof(models.Model):

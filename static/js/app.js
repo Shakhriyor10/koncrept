@@ -26,6 +26,23 @@
     }
   }
 
+  function syncCouponPicker() {
+    const groups = [...document.querySelectorAll("[data-coupon-group]")];
+    const selected = new Map();
+    groups.forEach((group) => {
+      group.querySelectorAll("[data-coupon-id]:checked").forEach((input) => selected.set(input.dataset.couponId, group));
+    });
+    groups.forEach((group) => {
+      const quantityInput = document.getElementById(group.dataset.quantityInput);
+      const quantity = Math.max(0, Number.parseInt(quantityInput?.value || "0", 10) || 0);
+      const chosenCount = group.querySelectorAll("[data-coupon-id]:checked").length;
+      group.querySelectorAll("[data-coupon-id]").forEach((input) => {
+        const chosenInOtherGroup = selected.has(input.dataset.couponId) && selected.get(input.dataset.couponId) !== group;
+        input.disabled = !input.checked && (quantity === 0 || chosenCount >= quantity || chosenInOtherGroup);
+      });
+    });
+  }
+
   function updateTotal() {
     const inputs = [...document.querySelectorAll(".quantity-input[data-price]")];
     const quantities = inputs.map((input) => ({
@@ -34,15 +51,22 @@
       price: Number(input.dataset.price || 0),
     }));
     const gross = quantities.reduce((sum, item) => sum + item.quantity * item.price, 0);
-    const reward = document.querySelector("[data-wheel-discount]");
-    const percent = Number(reward?.dataset.wheelDiscount || 0);
-    const eligible = quantities.filter((item) => item.quantity > 0).sort((a, b) => b.price - a.price)[0];
-    const discount = percent && eligible ? Math.floor(eligible.price * percent / 100) : 0;
+    syncCouponPicker();
+    const discount = [...document.querySelectorAll("[data-coupon-group]")].reduce((sum, group) => {
+      const quantityInput = document.getElementById(group.dataset.quantityInput);
+      const quantity = Math.max(0, Number.parseInt(quantityInput?.value || "0", 10) || 0);
+      const price = Number(quantityInput?.dataset.price || 0);
+      return sum + [...group.querySelectorAll("[data-coupon-id]:checked")]
+        .slice(0, quantity)
+        .reduce((ticketSum, coupon) => ticketSum + Math.floor(price * Number(coupon.dataset.discountPercent || 0) / 100), 0);
+    }, 0);
     const total = Math.max(0, gross - discount);
     const output = document.querySelector("#order-total-preview");
     if (output) output.textContent = `${money.format(total)} сум`;
     const discountOutput = document.querySelector("#order-discount-preview");
-    if (discountOutput) discountOutput.textContent = discount ? `−${money.format(discount)} сум на один билет` : "Выберите билет, чтобы применить скидку";
+    if (discountOutput) discountOutput.textContent = discount
+      ? `−${money.format(discount)} сум по выбранным купонам`
+      : "Выберите скидку для билета, если хотите её использовать";
   }
 
   function wheelStoreGuest(status) {
@@ -78,7 +102,7 @@
     const result = modal.querySelector("[data-wheel-result]");
     const countdown = modal.querySelector("[data-wheel-countdown]");
     const cta = modal.querySelector("[data-wheel-auth-cta]");
-    const expired = status.reward && new Date(status.reward.expires_at).getTime() <= Date.now();
+    const expired = status.reward?.expires_at && new Date(status.reward.expires_at).getTime() <= Date.now();
     if (result && status.reward) result.textContent = expired
       ? `Ваш прошлый приз: ${status.reward.label}. Его срок действия закончился.`
       : `Ваш приз: ${status.reward.label}!`;
@@ -268,6 +292,7 @@
       const file = document.querySelector("#proof-file");
       if (file) updateProofSelection(file);
     }
+    if (event.target.matches("[data-coupon-id]")) updateTotal();
   });
 
   document.addEventListener("click", async (event) => {
